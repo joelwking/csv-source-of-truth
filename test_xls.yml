@@ -1,0 +1,79 @@
+#!/usr/bin/ansible-playbook
+---
+#
+#      Copyright (c) 2019 World Wide Technology, Inc.
+#      All rights reserved.
+#
+#      author: Joel W. King, World Wide Technology
+#
+#      usage: ./test_xls.yml -e 'dest=/tmp/'
+#
+#
+- hosts: localhost
+  gather_facts: no 
+  connection: local
+
+  vars:
+    spreadsheet: '/it-automation-aci/TEST_DATA/Excel_TEST_DATA.xlsx'  
+    dest: '/tmp/foo/'
+
+  tasks:
+    - name: Extract the sheets from the Excel file, creating CSV files 
+      xls_to_csv:
+        src: '{{ spreadsheet }}' 
+        dest: '{{ dest }}' 
+        sheets: 
+          - 'Tenant Policy'
+          - 'DHCP_Relay'
+          - 'dhcp_servers'
+        warn: True
+
+    - debug:
+        msg: 'File {{ dest }}{{ item }} has been created'
+      loop: '{{ sheet_filenames }}'
+
+  #
+  #  variable sheet_filenames is referenced in the second play
+  #
+- hosts: localhost
+  gather_facts: no
+
+  vars:
+    dest: '/tmp/foo/'                           
+    vsheets:
+      TenantPolicy:
+          - TENANTs:
+             - Tenant
+      DHCP_Relay:
+          - RELAYs:
+             - DC
+             - Tenant
+             - BD
+             - AppProfile
+             - EPG
+             - DHCPRelayLabels 
+             - DHCP
+      dhcp_servers: []
+
+  tasks:
+    - name: Create summarized virtual sheets, loading the variables in a namespace using the filename 
+      csv_to_facts:
+        src: '{{ dest }}{{ item }}.csv'
+        table: '{{ item }}' 
+        vsheets:
+          '{{ vsheets[item] }}'
+      loop: '{{ sheet_filenames }}'
+
+    - name: Create scalar variables from rows in the spreadsheet
+      set_fact:
+        '{{ item.hostname }}': '{{ item.addr }}'
+      loop: '{{ dhcp_servers }}'
+
+    - debug:
+        msg: '{{ item }}'
+      loop: '{{ RELAYs }}'
+      when: item.DHCP|bool == True 
+
+    - debug:
+        msg: '{{ item }}'
+      loop: '{{ TENANTs }}' 
