@@ -64,7 +64,7 @@ EXAMPLES = '''
         sheets: []
         warn: True
 
-    Select one or more sheets and write the output to '/tmp/'. The trailing space is optional.
+    Select one or more sheets and write the output to '/tmp/'. The trailing slash is optional.
 
     - xls_to_csv:
         src: '/it-automation-aci/TEST_DATA/WWT_ACI_Constructs_and_Policies.xlsx'

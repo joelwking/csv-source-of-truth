@@ -12,7 +12,8 @@
 - hosts: localhost
   gather_facts: no 
   connection: local
-
+  tags: [xls_to_csv]
+  
   vars:
     spreadsheet: '/it-automation-aci/TEST_DATA/Excel_TEST_DATA.xlsx'  
     dest: '/tmp/foo/'
@@ -37,6 +38,7 @@
   #
 - hosts: localhost
   gather_facts: no
+  tags: [csv_to_facts]
 
   vars:
     dest: '/tmp/foo/'                           
