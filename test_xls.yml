@@ -34,6 +34,7 @@
     - debug:
         msg: 'File {{ dest }}{{ item }} has been created'
       loop: '{{ sheet_filenames }}'
+      tags: [debug]
 
     #
     #  variable 'sheet_filenames' is referenced in the second play
@@ -47,9 +48,11 @@
 
   vars:
     dest: '{{ playbook_dir }}/files/aci/'              
+    datacenter: DC1
     vsheets:
       TenantPolicy:
           - TENANTs:
+             - DC
              - Tenant
       DHCP_Relay:
           - RELAYs:
@@ -71,16 +74,15 @@
           '{{ vsheets[item] }}'
       loop: '{{ sheet_filenames }}'
 
-    - name: Create scalar variables from rows in the spreadsheet
-      set_fact:
-        '{{ item.hostname }}': '{{ item.addr }}'
-      loop: '{{ dhcp_servers }}'
+    - debug:
+        msg: '{{ item }}'
+      loop: '{{ TENANTs }}'
+      tags: [debug]
 
     - debug:
         msg: '{{ item }}'
       loop: '{{ RELAYs }}'
-      when: item.DHCP|bool == True 
-
-    - debug:
-        msg: '{{ item }}'
-      loop: '{{ TENANTs }}' 
+      when: 
+        - item.DHCP|bool == True 
+        - item.DC == datacenter
+      tags: [debug]

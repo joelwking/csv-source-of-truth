@@ -96,6 +96,7 @@ OK = 1
 EXTENSION = '.csv'
 START_WITH_LETTER = 'Z_'
 FACTS = 'ansible_facts'
+EMPTY = 'EMPTY'
 
 #
 # Imports
@@ -132,6 +133,8 @@ def read_xls(input_file, sheets, warn):
     for sheet in xlsx.sheet_names:                         # list of sheet names to extract
         if sheet in sheets:
             data_frame[sheet] = xlsx.parse(sheet)          # read the sheet to a DataFrame
+                                                           # fill empty cells
+            data_frame[sheet] = data_frame[sheet].fillna(value=EMPTY)
             result[FACTS][get_valid_name(sheet)] = get_rows(data_frame[sheet])
         else:
             if warn:

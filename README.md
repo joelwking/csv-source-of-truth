@@ -143,7 +143,7 @@ hostname,addr,fqdn,label
 ==> ./files/aci/TenantPolicy.csv <==
 BD,Subnet,L2UnknownUnicast,AppProfile,Scope,Notes,VLAN,DC,DHCPRelayLabels,UnicastRouting,L3Out,Connectivity,VLANName,VRF,DHCP,ARPFlooding,EPG,GatewayAddress,Tenant
 ```
-Because the column headers are used as variable names referenced in playbooks, issue the *head -1* command for each file to identify the column headers.  
+Because the column headers are used as variable names referenced in playbooks, issue the `head -1` command for each file to identify the column headers.  
 
 **Tip:** Knowing the column headers is important for converting the CSV file to Ansible facts in the `csv_to_facts` module described later.
 
@@ -154,4 +154,63 @@ By reviewing the column headers in the output files, the cell contents of each r
 
 ### Optimizing Tabular Data
 
+Because a spreadsheet represents data in a tabular format, and the ACI fabric configuration is stored in a Management Information Tree (a hierarchical) structure, there will be repetitive data defined in the sheet.
+
+For example, assume there are two data centers, (DC1 and DC2) each with an APIC Clusters managing the policy of their respective domain. Each data center will have one or more tenants, each tenant may have one or more VRFs, Bridge Domains, and so on. The tabular data, therefore, will have redundant information at the root of the tree.
+
+Looking at the test data, there is 15 rows of data, representing two data centers, with each data center having two tenants.
+
+```bash
+$ cat files/aci/TenantPolicy.csv | cut -d ',' -f 8,20
+DC,Tenant
+DC1,XXV-INT
+DC1,XXV-DMZ
+DC2,XXV-DMZ
+DC1,XXV-INT
+DC1,XXV-INT
+DC1,XXV-INT
+DC1,XXV-DMZ
+DC1,XXV-DMZ
+DC1,XXV-INT
+DC1,XXV-DMZ
+DC1,XXV-DMZ
+DC2,XXV-INT
+DC2,XXV-INT
+DC2,XXV-INT
+DC2,XXV-INT
+```
+
+In the use case of configuring the ACI fabric from this data, the APIC REST API itself is idempotent, issuing a request to create (or delete) a tenant with the same name does not add a duplicate tenant, it simply validates the tenant name exists (or in the case of a delete, it doesn't exist), and returns a successful status (200 OK) to the caller.
+
+However, this is inefficient, causing unnecessary API calls and increasing the run time and memory usage of the playbook.
+
+#### Module csv_to_facts
+The module `csv_to_facts` reads a CSV file and returns as Ansible facts a list of dictionaries for each row. The column header is the key, the contents of the cell is the value.
+
+This module optionally will optimize the input file by creating a fact variable which eliminates redundancy by returning unique rows for the columns specified. 
+
 TODO
+
+```json
+{
+    "ansible_facts": {
+        "TENANTs": [
+            {
+                "DC": "DC2",
+                "Tenant": "XXV-INT"
+            },
+            {
+                "DC": "DC1",
+                "Tenant": "XXV-DMZ"
+            },
+            {
+                "DC": "DC2",
+                "Tenant": "XXV-DMZ"
+            },
+            {
+                "DC": "DC1",
+                "Tenant": "XXV-INT"
+            }
+        ]
+}
+```
