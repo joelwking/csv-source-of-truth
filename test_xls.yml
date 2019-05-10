@@ -8,15 +8,17 @@
 #
 #      usage: ./test_xls.yml -e 'dest=/tmp/'
 #
-#
+#  ------
+#  Play 1
+#  ------
 - hosts: localhost
   gather_facts: no 
   connection: local
-  tags: [xls_to_csv]
-  
+  tags: [play1, xls_to_csv]
+
   vars:
     spreadsheet: '/it-automation-aci/TEST_DATA/Excel_TEST_DATA.xlsx'  
-    dest: '/tmp/foo/'
+    dest: '{{ playbook_dir }}/files/aci/'
 
   tasks:
     - name: Extract the sheets from the Excel file, creating CSV files 
@@ -33,15 +35,18 @@
         msg: 'File {{ dest }}{{ item }} has been created'
       loop: '{{ sheet_filenames }}'
 
-  #
-  #  variable sheet_filenames is referenced in the second play
-  #
+    #
+    #  variable 'sheet_filenames' is referenced in the second play
+    #
+# ------
+# Play 2
+# ------
 - hosts: localhost
   gather_facts: no
-  tags: [csv_to_facts]
+  tags: [play2, csv_to_facts]
 
   vars:
-    dest: '/tmp/foo/'                           
+    dest: '{{ playbook_dir }}/files/aci/'              
     vsheets:
       TenantPolicy:
           - TENANTs:
