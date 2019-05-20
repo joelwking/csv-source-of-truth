@@ -152,13 +152,15 @@ This section illustrates programmatically extracting one or more sheets from a s
 
 By reviewing the column headers in the output files, the cell contents of each row can be used as configuration data for the network infrastructure.
 
-### Optimizing Tabular Data
+#### Read CSV, expose as variables to a playbook
 
-Because a spreadsheet represents data in a tabular format, and the ACI fabric configuration is stored in a Management Information Tree (a hierarchical) structure, there will be repetitive data defined in the sheet.
+The module `csv_to_facts` reads a CSV file and returns as Ansible facts a list of dictionaries for each row. The column header is the key, the contents of the cell is the value.
 
 For example, assume there are two data centers, (DC1 and DC2) each with an APIC Clusters managing the policy of their respective domain. Each data center will have one or more tenants, each tenant may have one or more VRFs, Bridge Domains, and so on. The tabular data, therefore, will have redundant information at the root of the tree.
 
-Looking at the test data, there is 15 rows of data, representing two data centers, with each data center having two tenants.
+Looking at the sample data (file TenantPolicy.csv), there are 15 rows of data, representing two data centers, with each data center having two tenants.
+
+While there are a number of columns in each row that describe the configuration of the ACI fabric(s), for this explanation we will focus on the column *DC* (data center), and *Tenant*.
 
 ```bash
 $ cat files/aci/TenantPolicy.csv | cut -d ',' -f 8,20
@@ -180,16 +182,69 @@ DC2,XXV-INT
 DC2,XXV-INT
 ```
 
+#### Execute csv_to_facts
+The module `csv_to_facts` reads a CSV file and returns as Ansible facts a list of dictionaries for each row. The column header is the key, the contents of the cell is the value.
+
+The default behavior of `csv_to_facts` is to return as facts the content of the source (*src*) file in a list variable named *spreadsheet*. Examine this playbook sample.
+
+```yaml
+- hosts: localhost
+  gather_facts: no
+  tags: [play2, csv_to_facts]
+
+  tasks:
+    - name: Default behavior of csv_to_facts
+      csv_to_facts:
+        src: '{{ playbook_dir }}/files/aci/TenantPolicy.csv'
+
+    - debug:
+        msg: '{{ item.DC }} {{ item.Tenant }}'
+      loop: '{{ spreadsheet }}'
+
+```
+
+By executing the playbook, we iterate over the list variable *spreadsheet* and reference the *DC* and *Tenant* columns. The list spreadsheet has a length of 15, each list item corresponds to a row in the CSV file.
+
+**Tip:** The argument *table* can be specified to provide a value other than the default value of *spreadsheet*. Use `ansible-doc csv_to_facts` for more details.
+
+### Optimizing Tabular Data
+Because a spreadsheet represents data in a tabular format, and the ACI fabric configuration is stored in a Management Information Tree (a hierarchical) structure, there will be repetitive data defined in the sheet.
+
 In the use case of configuring the ACI fabric from this data, the APIC REST API itself is idempotent, issuing a request to create (or delete) a tenant with the same name does not add a duplicate tenant, it simply validates the tenant name exists (or in the case of a delete, it doesn't exist), and returns a successful status (200 OK) to the caller.
 
 However, this is inefficient, causing unnecessary API calls and increasing the run time and memory usage of the playbook.
 
-#### Module csv_to_facts
-The module `csv_to_facts` reads a CSV file and returns as Ansible facts a list of dictionaries for each row. The column header is the key, the contents of the cell is the value.
+#### Create virtual spreadsheets
+The `csv_to_facts` module can optimize the input file by creating a fact variable which eliminates redundancy by returning unique rows for the columns specified. 
 
-This module optionally will optimize the input file by creating a fact variable which eliminates redundancy by returning unique rows for the columns specified. 
+This optimization of the input CSV file is a accomplished by creating multiple views of the input data with the specified columns and returning a list of unique values for the column specified. 
 
-TODO
+This is accomplished by manipulating the input spreadsheet and using the Python *set* data type to create unordered collections of unique elements. 
+
+These virtual spreadsheets can be used to loop (iterate) over a task. In Ansible, loops are used to repeat a task multiple times.
+
+To illustrate, given the input *files/aci/TenantPolicy.csv* and a role / task file which will create an ACI tenant, the goal is to iterate over this task, selecting data center *DC1* and creating (or deleting) the Tenants specified in the CSV file.
+
+```yaml
+  vars:
+    data_center: 'DC1'
+    change_request: 'CHG00012345'
+
+  tasks:
+    - name: Manage Tenants
+      include_role:
+        name: ansible-aci-tenant
+        tasks_from: tenant
+      vars:
+        fvTenant:
+          name: '{{ item.Tenant }}'
+          descr: '{{ change_request }}'
+      loop: '{{ TENANTs }}'
+      when:
+        - item.DC == data_center
+```
+
+To accomplish this task, our list variable *TENANTs* should look like the following data structure:
 
 ```json
 {
