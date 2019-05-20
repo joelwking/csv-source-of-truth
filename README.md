@@ -223,7 +223,7 @@ This is accomplished by manipulating the input spreadsheet and using the Python 
 
 These virtual spreadsheets can be used to loop (iterate) over a task. In Ansible, loops are used to repeat a task multiple times.
 
-To illustrate, given the input *files/aci/TenantPolicy.csv* and a role / task file which will create an ACI tenant, the goal is to iterate over this task, selecting data center *DC1* and creating (or deleting) the Tenants specified in the CSV file.
+To illustrate, given the input *files/aci/TenantPolicy.csv* and  the task file (*tenant in role *ansible-aci-tenant*) which creates an ACI tenant, the goal is to iterate over this task, selecting data center *DC1* and creating (or deleting) the Tenants specified in the CSV file.
 
 ```yaml
   vars:
@@ -244,7 +244,7 @@ To illustrate, given the input *files/aci/TenantPolicy.csv* and a role / task fi
         - item.DC == data_center
 ```
 
-To accomplish this task, our list variable *TENANTs* should look like the following data structure:
+To accomplish this task efficiently, our list variable *TENANTs* should be made up of the unique tenants in each data center. Each data center has the same two tenants, *XXV-INT* and *XXV-DMZ*. 
 
 ```json
 {
@@ -269,3 +269,26 @@ To accomplish this task, our list variable *TENANTs* should look like the follow
         ]
 }
 ```
+By using the *vsheets* argument, specify a list of virtual spreadsheets you wish to create, and for each virtual spreadsheet, specify a list of columns.  The aforementioned list of *TENANTs* can be created using the following example:
+
+```yaml
+- hosts: localhost
+  gather_facts: no
+
+  tasks:
+    - name: Create virtual spreadsheet of data centers (DC) and tenants
+      csv_to_facts:
+        src: '{{ playbook_dir }}/files/aci/TenantPolicy.csv'
+        vsheets:
+          - TENANTs:
+             - DC
+             - Tenant
+```
+
+### Use Case
+
+TODO
+
+## Summary
+
+TODO

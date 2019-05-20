@@ -6,7 +6,7 @@
 #
 #      author: Joel W. King, World Wide Technology
 #
-#      usage: ./test_xls.yml -e 'dest=/tmp/'
+#      usage: ./test_xls.yml -e 'dest=/tmp/' --tags play2
 #
 #  ------
 #  Play 1
@@ -37,14 +37,47 @@
       tags: [debug]
 
     #
-    #  variable 'sheet_filenames' is referenced in the second play
+    #  variable 'sheet_filenames' is referenced in subsequent play(s) 
     #
+
 # ------
 # Play 2
 # ------
 - hosts: localhost
   gather_facts: no
   tags: [play2, csv_to_facts]
+
+  tasks:
+    - name: Default behavior of csv_to_facts
+      csv_to_facts:
+        src: '{{ playbook_dir }}/files/aci/TenantPolicy.csv'
+    - debug:
+        msg: '{{ item.DC }} {{ item.Tenant }}'
+      loop: '{{ spreadsheet }}'
+
+# ------
+# Play 3
+# ------
+- hosts: localhost
+  gather_facts: no
+  tags: [play3, csv_to_facts]
+
+  tasks:
+    - name: Create virtual spreadsheet of data centers (DC) and tenants
+      csv_to_facts:
+        src: '{{ playbook_dir }}/files/aci/TenantPolicy.csv'
+        vsheets: 
+          - TENANTs:
+             - DC
+             - Tenant
+
+
+# ------
+# Play 4
+# ------
+- hosts: localhost
+  gather_facts: no
+  tags: [play4, csv_to_facts]
 
   vars:
     dest: '{{ playbook_dir }}/files/aci/'              
