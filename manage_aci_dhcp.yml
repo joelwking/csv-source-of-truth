@@ -8,3 +8,82 @@
 #
 #      usage: ./manage_aci_dhcp.yml
 #
+- hosts: localhost
+  gather_facts: no 
+  connection: local
+  tags: [play1]
+
+  vars:
+    spreadsheet: '{{ playbood_dir }}/files/aci/ACI_DHCP_configuration.xlsx'  
+    sheet: 'DHCP_Relay'
+    dest: '{{ playbook_dir }}/files/aci/'
+
+  tasks:
+    - name: Extract the sheets from the Excel file, creating CSV file(s) 
+      xls_to_csv:
+        src: '{{ spreadsheet }}' 
+        dest: '{{ dest }}' 
+        sheets: 
+          - '{{ sheet }}'
+        warn: True
+
+
+- hosts: APIC
+  gather_facts: no 
+  connection: local
+  tags: [play2]
+
+  vars:
+    # defaults, override with --extra-vars
+    bootstrap: aci_dhcp.yml
+    desired_state: present
+    data_center: DC1
+    ticket: 'change request ticket number'
+
+  roles: 
+    - ansible-aci-credentials
+    - ansible-aci-include-data
+
+  tasks:
+    - name: Summarize the sheet and include as facts
+      csv_to_facts:
+        src: '{{ dest }}/{{ sheet }}.csv'
+        vsheets: 
+          - DHCPentries
+              - DC
+              - Tenant
+              - BD
+              - AppProfile
+              - Label
+              - DHCP
+              - EPG
+
+    - name: Manage DHCP Relay configuration
+      include_role:
+        name: ansible-aci-bridgedomain
+        tasks_from: dhcp
+      vars:
+        fvTenant:
+          name: '{{ item.Tenant }}'                                  # Where the policy is being configured
+        fvCtx:                                             
+          name: '{{ item.BD }}'                                      # Bridge Domain
+        dhcpRsProv:
+          addr: '{{ dhcp.server[item.Label].addr }}'                 # DHCP Server IP address,  "198.51.1.200"
+          fvTenant:                                                  # Target EPG (Associated EPG)
+            name: '{{ dhcp.server[item.Label].fvTenant }}'           # To build the URL of the Associated / Target EPG
+          fvAp:                                                      # We need the name of the Tenant, AP and EPG
+            name: '{{ dhcp.server[item.Label].fvAp }}'                    
+          fvAEPg:                                                    
+            name: '{{ dhcp.server[item.Label].fvAEPg }}'                                      
+        dhcpLbl:
+          name: '{{ item.Label }}'
+          owner: '{{ item.owner }}'                                  # The owner of the target relay. 'tenant' or 'infra'
+          descr: 'dhcpLbl_{{ ticket }}'      
+        dhcpRelayP:
+          owner: '{{ item.owner }}'                                  # The owner of the target relay. 'tenant' or 'infra'
+          name: '{{ item.Label }}'                                   # Name of the DHCP relay policy
+          descr: 'dhcpRelayP_{{ ticket }}'                           # Description of the DHCP relay policy
+      loop: '{{ DHCPentries }}'
+      when:
+        - item.DC == data_center
+        - item.DHCP|bool == True
