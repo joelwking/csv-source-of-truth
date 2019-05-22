@@ -287,7 +287,33 @@ By using the *vsheets* argument, specify a list of virtual spreadsheets you wish
 
 ### Use Case
 
-TODO
+To illustrate the use of both the `xls_to_csv` and the `csv_to_facts` modules, a Cisco ACI configuration workflow is shown in this section.
+
+Review the playbook *manage_aci_dhcp.yml*.  This playbook contains two plays. 
+
+The first play uses `xls_to_csv` which reads the input file located in */files/aci/ACI_DHCP_configuration.xlsx*, selects sheet 'DHCP_Relay' and writes it to a CSV file in the same directory.
+
+The second play uses `csv_to_facts`. This module creates a list variable named *DHCPentries* which includes these columns from the sheet 'DHCP_Relay'. 
+
+```yaml
+  - DC
+  - Tenant
+  - BD
+  - AppProfile
+  - Label
+  - DHCP
+  - owner
+  - EPG
+```
+
+The second task (Manage DHCP Relay configuration) in the play iterates over the list variable *DHCPentries* and conditionally calling the task *dhcp* from role *ansible-aci-bridgedomain* for the selected data center (DC) when the variable *DHCP* is True (specified as 'Yes' in the sheet).
+
+This playbook is executed by specifying the name of the sheet from the Excel file, the target data center and a ticket number to associate the configuration update with a reference ticket number from our service management system.
+
+```bash
+$ ./manage_aci_dhcp.yml -e "sheet='DHCP_Relay' data_center=DC1 ticket=CHG12345"
+```
+TODO: INSERT VIDEO EXAMPLE HERE
 
 ## Summary
 
