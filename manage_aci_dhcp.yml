@@ -6,17 +6,23 @@
 #
 #      author: Joel W. King, World Wide Technology
 #
-#      usage: ./manage_aci_dhcp.yml
+#      usage: ./manage_aci_dhcp.yml -e "sheet='DHCP_Relay' data_center=DC1 ticket=CHG12345"
 #
+#      description: Sample playbook to illustrate  using an Excel file as input to ACI configuration
+#
+#  ------
+#  Play 1 
+#  ------
 - hosts: localhost
   gather_facts: no 
   connection: local
   tags: [play1]
 
   vars:
-    spreadsheet: '{{ playbood_dir }}/files/aci/ACI_DHCP_configuration.xlsx'  
-    sheet: 'DHCP_Relay'
-    dest: '{{ playbook_dir }}/files/aci/'
+    # defaults, override with --extra-vars
+    spreadsheet: '{{ playbook_dir }}/files/aci/ACI_DHCP_configuration.xlsx'  
+    sheet: 'DHCP_Relay'                                    # Name of the sheet in the spreadsheet file
+    dest: '{{ playbook_dir }}/files/aci/'                  # Location where files are stored
 
   tasks:
     - name: Extract the sheets from the Excel file, creating CSV file(s) 
@@ -27,7 +33,9 @@
           - '{{ sheet }}'
         warn: True
 
-
+# ------
+# Play 2
+# ------
 - hosts: APIC
   gather_facts: no 
   connection: local
@@ -35,27 +43,30 @@
 
   vars:
     # defaults, override with --extra-vars
-    bootstrap: aci_dhcp.yml
-    desired_state: present
-    data_center: DC1
-    ticket: 'change request ticket number'
+    bootstrap: aci_dhcp.yml                                # Used by role ansible-aci-include-data
+    desired_state: present                                 # To delete, specify 'absent'
+    data_center: DC1                                       # Only configure one data center at a time
+    ticket: 'change request ticket number'                 # Add a 'ticket' or reference number to the config
+    src: '{{ playbook_dir }}/files/aci/'                   # Location where files are stored
+    sheet: 'DHCP_Relay'                                    # Name of the sheet in the spreadsheet file
 
   roles: 
-    - ansible-aci-credentials
-    - ansible-aci-include-data
+    - ansible-aci-credentials                              # Handles Credentials for ACI authentication
+    - ansible-aci-include-data                             # Includes vars and file(s) from bootstrap
 
   tasks:
     - name: Summarize the sheet and include as facts
       csv_to_facts:
-        src: '{{ dest }}/{{ sheet }}.csv'
+        src: '{{ src }}/{{ sheet }}.csv'
         vsheets: 
-          - DHCPentries
+          - DHCPentries:
               - DC
               - Tenant
               - BD
               - AppProfile
               - Label
               - DHCP
+              - owner
               - EPG
 
     - name: Manage DHCP Relay configuration
