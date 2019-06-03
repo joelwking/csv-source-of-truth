@@ -15,18 +15,10 @@ dhcp:
   server:
       DHCP-DC1-PRD:  
         addr: 203.0.113.17  
-        hostname: dhcp_dc1_prd  
-        fqdn: dhcp_dc1_prd.example.net
-        # name values for Associated / Target EPG
-        fvTenant: WWT_NULL
-        fvAp: MANAGEMENT
-        fvAEPg: DHCP
+        # Target DN example using Routed L3 out
+        dn: uni/tn-common/out-L3-ATC/instP-L3-ATC
 
       DHCP-DC2-PRD: 
         addr: 198.51.100.17 
-        hostname: dhcp_dc2_prd  
-        fqdn: dhcp_dc2_prd.example.net
-        # name values for Associated / Target EPG
-        fvTenant: WWT_NULL
-        fvAp: MANAGEMENT
-        fvAEPg: DHCP
+        # Target DN when using Tenant, Application Profile, Application EPG
+        dn: 'uni/tn-WWT_NULL/ap-MANAGEMENT/epg-DHCP'

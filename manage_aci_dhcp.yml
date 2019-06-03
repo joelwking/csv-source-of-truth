@@ -6,7 +6,7 @@
 #
 #      author: Joel W. King, World Wide Technology
 #
-#      usage: ./manage_aci_dhcp.yml -e "sheet='DHCP_Relay' data_center=DC1 ticket=CHG12345"
+#      usage: ./manage_aci_dhcp.yml -e "sheet='DHCP Relay' data_center=DC1 ticket=CHG12345"
 #
 #      description: Sample playbook to illustrate  using an Excel file as input to ACI configuration
 #
@@ -21,7 +21,7 @@
   vars:
     # defaults, override with --extra-vars
     spreadsheet: '{{ playbook_dir }}/files/aci/ACI_DHCP_configuration.xlsx'  
-    sheet: 'DHCP_Relay'                                    # Name of the sheet in the spreadsheet file
+    sheet: 'DHCP Relay'                                    # Name of the sheet in the spreadsheet file
     dest: '{{ playbook_dir }}/files/aci/'                  # Location where files are stored
 
   tasks:
@@ -41,18 +41,18 @@
   connection: local
   tags: [play2]
 
+
   vars:
     # defaults, override with --extra-vars
-    bootstrap: aci_dhcp.yml                                # Used by role ansible-aci-include-data
+    bootstrap: aci_dhcp.yml
     desired_state: present                                 # To delete, specify 'absent'
     data_center: DC1                                       # Only configure one data center at a time
     ticket: 'change request ticket number'                 # Add a 'ticket' or reference number to the config
     src: '{{ playbook_dir }}/files/aci/'                   # Location where files are stored
-    sheet: 'DHCP_Relay'                                    # Name of the sheet in the spreadsheet file
+    sheet: 'DHCPRelay'                                     # Name of the sheet in the spreadsheet file
 
-  roles: 
-    - ansible-aci-credentials                              # Handles Credentials for ACI authentication
-    - ansible-aci-include-data                             # Includes vars and file(s) from bootstrap
+  vars_files:
+    - '{{ playbook_dir }}/files/{{ bootstrap }}'
 
   tasks:
     - name: Summarize the sheet and include as facts
@@ -64,37 +64,15 @@
               - Tenant
               - BD
               - AppProfile
-              - Label
               - DHCP
-              - owner
               - EPG
 
-    - name: Manage DHCP Relay configuration
-      include_role:
-        name: ansible-aci-bridgedomain
-        tasks_from: dhcp
-      vars:
-        fvTenant:
-          name: '{{ item.Tenant }}'                                  # Where the policy is being configured
-        fvCtx:                                             
-          name: '{{ item.BD }}'                                      # Bridge Domain
-        dhcpRsProv:
-          addr: '{{ dhcp.server[item.Label].addr }}'                 # DHCP Server IP address,  "198.51.1.200"
-          fvTenant:                                                  # Target EPG (Associated EPG)
-            name: '{{ dhcp.server[item.Label].fvTenant }}'           # To build the URL of the Associated / Target EPG
-          fvAp:                                                      # We need the name of the Tenant, AP and EPG
-            name: '{{ dhcp.server[item.Label].fvAp }}'                    
-          fvAEPg:                                                    
-            name: '{{ dhcp.server[item.Label].fvAEPg }}'                                      
-        dhcpLbl:
-          name: '{{ item.Label }}'
-          owner: '{{ item.owner }}'                                  # The owner of the target relay. 'tenant' or 'infra'
-          descr: 'dhcpLbl_{{ ticket }}'      
-        dhcpRelayP:
-          owner: '{{ item.owner }}'                                  # The owner of the target relay. 'tenant' or 'infra'
-          name: '{{ item.Label }}'                                   # Name of the DHCP relay policy
-          descr: 'dhcpRelayP_{{ ticket }}'                           # Description of the DHCP relay policy
-      loop: '{{ DHCPentries }}'
+    - name: Example of the flow control when labels defined outside of CSV file
+      debug:
+        msg: 'Apply to {{ item.0.Tenant }} DHCP server {{ item.1.value.addr }} dn={{ item.1.value.dn }}'
+      with_nested:
+        - '{{ DHCPentries }}'                              # item.0.blah
+        - '{{ dhcp.server | dict2items }}'                 # item.1.key  item.1.value.blah
       when:
-        - item.DC == data_center
-        - item.DHCP|bool == True
+        - item.0.DC == data_center
+        - item.0.DHCP|bool == True

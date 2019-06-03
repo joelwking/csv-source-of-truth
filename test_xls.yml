@@ -17,7 +17,7 @@
   tags: [play1, xls_to_csv]
 
   vars:
-    spreadsheet: '/it-automation-aci/TEST_DATA/Excel_TEST_DATA.xlsx'  
+    spreadsheet: '{{ playbook_dir }}/files/aci/ACI_DHCP_configuration.xlsx'  
     dest: '{{ playbook_dir }}/files/aci/'
 
   tasks:
@@ -26,9 +26,8 @@
         src: '{{ spreadsheet }}' 
         dest: '{{ dest }}' 
         sheets: 
-          - 'Tenant Policy'
-          - 'DHCP_Relay'
-          - 'dhcp_servers'
+          - 'DHCP Relay'
+          - 'data_centers'
         warn: True
 
     - debug:
