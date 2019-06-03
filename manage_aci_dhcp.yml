@@ -69,7 +69,7 @@
 
     - name: Example of the flow control when labels defined outside of CSV file
       debug:
-        msg: 'Apply to {{ item.0.Tenant }} DHCP server {{ item.1.value.addr }} dn={{ item.1.value.dn }}'
+        msg: 'Apply to {{ item.0.Tenant }} DHCP {{ item.1.key }} server {{ item.1.value.addr }} dn={{ item.1.value.dn }}'
       with_nested:
         - '{{ DHCPentries }}'                              # item.0.blah
         - '{{ dhcp.server | dict2items }}'                 # item.1.key  item.1.value.blah
