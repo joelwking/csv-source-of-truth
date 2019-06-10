@@ -31,7 +31,7 @@
         warn: True
 
     - debug:
-        msg: 'File {{ dest }}{{ item }} has been created'
+        msg: 'File {{ dest }}{{ item }}.csv has been created'
       loop: '{{ sheet_filenames }}'
       tags: [debug]
 
@@ -49,7 +49,7 @@
   tasks:
     - name: Default behavior of csv_to_facts
       csv_to_facts:
-        src: '{{ playbook_dir }}/files/aci/TenantPolicy.csv'
+        src: '{{ playbook_dir }}/files/aci/DHCPRelay.csv'
     - debug:
         msg: '{{ item.DC }} {{ item.Tenant }}'
       loop: '{{ spreadsheet }}'
@@ -64,12 +64,11 @@
   tasks:
     - name: Create virtual spreadsheet of data centers (DC) and tenants
       csv_to_facts:
-        src: '{{ playbook_dir }}/files/aci/TenantPolicy.csv'
+        src: '{{ playbook_dir }}/files/aci/DHCPRelay.csv'
         vsheets: 
           - TENANTs:
              - DC
              - Tenant
-
 
 # ------
 # Play 4
@@ -82,20 +81,19 @@
     dest: '{{ playbook_dir }}/files/aci/'              
     datacenter: DC1
     vsheets:
-      TenantPolicy:
+      data_centers:
           - TENANTs:
              - DC
              - Tenant
-      DHCP_Relay:
+             - address1
+      DHCPRelay:
           - RELAYs:
              - DC
              - Tenant
              - BD
              - AppProfile
              - EPG
-             - DHCPRelayLabels 
              - DHCP
-      dhcp_servers: []
 
   tasks:
     - name: Create summarized virtual sheets, loading the variables in a namespace using the filename 

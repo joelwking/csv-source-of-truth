@@ -67,9 +67,9 @@
               - DHCP
               - EPG
 
-    - name: Example of the flow control when labels defined outside of CSV file
+    - name: Associate multiple DHCP servers with a Tenant, Bridge Domain
       debug:
-        msg: 'Apply to {{ item.0.Tenant }} DHCP {{ item.1.key }} server {{ item.1.value.addr }} dn={{ item.1.value.dn }}'
+        msg: 'Apply to tenant={{ item.0.Tenant }} BD={{item.0.BD}} DHCP Label={{ item.1.key }} server={{ item.1.value.addr }} dn={{ item.1.value.dn }}'
       with_nested:
         - '{{ DHCPentries }}'                              # item.0.blah
         - '{{ dhcp.server | dict2items }}'                 # item.1.key  item.1.value.blah
