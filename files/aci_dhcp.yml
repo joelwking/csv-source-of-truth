@@ -1,7 +1,5 @@
 ---
 # aci_dhcp.yml
-
-
 #
 # Global variables                                         # Rather than clutter the playbook, define global varialbes here
 #
@@ -9,7 +7,7 @@ validate_certs: no                                         # If `no', SSL certif
 use_ssl: yes                                               # When 'yes', use HTTPS, otherwise use HTTP.
 timeout: 30
 #
-# Reference data to associate a DHCP label in the spreadsheet with the IP address
+# Reference data to associate a DHCP label with the IP address
 #
 dhcp:
   server:

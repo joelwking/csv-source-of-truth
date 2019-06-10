@@ -12,20 +12,20 @@
 #  Play 1
 #  ------
 - hosts: localhost
-  gather_facts: no 
+  gather_facts: no
   connection: local
   tags: [play1, xls_to_csv]
 
   vars:
-    spreadsheet: '{{ playbook_dir }}/files/aci/ACI_DHCP_configuration.xlsx'  
+    spreadsheet: '{{ playbook_dir }}/files/aci/ACI_DHCP_configuration.xlsx'
     dest: '{{ playbook_dir }}/files/aci/'
 
   tasks:
-    - name: Extract the sheets from the Excel file, creating CSV files 
+    - name: Extract the sheets from the Excel file, creating CSV files
       xls_to_csv:
-        src: '{{ spreadsheet }}' 
-        dest: '{{ dest }}' 
-        sheets: 
+        src: '{{ spreadsheet }}'
+        dest: '{{ dest }}'
+        sheets:
           - 'DHCP Relay'
           - 'data_centers'
         warn: True
@@ -36,7 +36,7 @@
       tags: [debug]
 
     #
-    #  variable 'sheet_filenames' is referenced in subsequent play(s) 
+    #  variable 'sheet_filenames' is referenced in subsequent play(s)
     #
 
 # ------
@@ -65,7 +65,7 @@
     - name: Create virtual spreadsheet of data centers (DC) and tenants
       csv_to_facts:
         src: '{{ playbook_dir }}/files/aci/DHCPRelay.csv'
-        vsheets: 
+        vsheets:
           - TENANTs:
              - DC
              - Tenant
@@ -78,7 +78,7 @@
   tags: [play4, csv_to_facts]
 
   vars:
-    dest: '{{ playbook_dir }}/files/aci/'              
+    dest: '{{ playbook_dir }}/files/aci/'
     datacenter: DC1
     vsheets:
       data_centers:
@@ -96,10 +96,10 @@
              - DHCP
 
   tasks:
-    - name: Create summarized virtual sheets, loading the variables in a namespace using the filename 
+    - name: Create summarized virtual sheets, loading the variables in a namespace using the filename
       csv_to_facts:
         src: '{{ dest }}{{ item }}.csv'
-        table: '{{ item }}' 
+        table: '{{ item }}'
         vsheets:
           '{{ vsheets[item] }}'
       loop: '{{ sheet_filenames }}'
@@ -112,7 +112,7 @@
     - debug:
         msg: '{{ item }}'
       loop: '{{ RELAYs }}'
-      when: 
-        - item.DHCP|bool == True 
+      when:
+        - item.DHCP|bool
         - item.DC == datacenter
       tags: [debug]

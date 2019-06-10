@@ -11,25 +11,25 @@
 #      description: Sample playbook to illustrate  using an Excel file as input to ACI configuration
 #
 #  ------
-#  Play 1 
+#  Play 1
 #  ------
 - hosts: localhost
-  gather_facts: no 
+  gather_facts: no
   connection: local
   tags: [play1]
 
   vars:
     # defaults, override with --extra-vars
-    spreadsheet: '{{ playbook_dir }}/files/aci/ACI_DHCP_configuration.xlsx'  
+    spreadsheet: '{{ playbook_dir }}/files/aci/ACI_DHCP_configuration.xlsx'
     sheet: 'DHCP Relay'                                    # Name of the sheet in the spreadsheet file
     dest: '{{ playbook_dir }}/files/aci/'                  # Location where files are stored
 
   tasks:
-    - name: Extract the sheets from the Excel file, creating CSV file(s) 
+    - name: Extract the sheets from the Excel file, creating CSV file(s)
       xls_to_csv:
-        src: '{{ spreadsheet }}' 
-        dest: '{{ dest }}' 
-        sheets: 
+        src: '{{ spreadsheet }}'
+        dest: '{{ dest }}'
+        sheets:
           - '{{ sheet }}'
         warn: True
 
@@ -37,10 +37,9 @@
 # Play 2
 # ------
 - hosts: APIC
-  gather_facts: no 
+  gather_facts: no
   connection: local
   tags: [play2]
-
 
   vars:
     # defaults, override with --extra-vars
@@ -58,7 +57,7 @@
     - name: Summarize the sheet and include as facts
       csv_to_facts:
         src: '{{ src }}/{{ sheet }}.csv'
-        vsheets: 
+        vsheets:
           - DHCPentries:
               - DC
               - Tenant
@@ -69,10 +68,10 @@
 
     - name: Associate multiple DHCP servers with a Tenant, Bridge Domain
       debug:
-        msg: 'Apply to tenant={{ item.0.Tenant }} BD={{item.0.BD}} DHCP Label={{ item.1.key }} server={{ item.1.value.addr }} dn={{ item.1.value.dn }}'
+        msg: 'Apply to tenant={{ item.0.Tenant }} BD={{ item.0.BD }} DHCP Label={{ item.1.key }} server={{ item.1.value.addr }} dn={{ item.1.value.dn }}'
       with_nested:
         - '{{ DHCPentries }}'                              # item.0.blah
         - '{{ dhcp.server | dict2items }}'                 # item.1.key  item.1.value.blah
       when:
         - item.0.DC == data_center
-        - item.0.DHCP|bool == True
+        - item.0.DHCP|bool
