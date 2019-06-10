@@ -8,6 +8,23 @@ Microsoft Excel is readily available, provides a high degree of functionality fo
 
 While YAML is a human-readable data serialization language and perhaps more suitable, especially given using Ansible as a configuration management tool, the whitespace indentation to provide structure can be confusing initially to the non-programmer.
 
+## Installation
+Refer to the instructions for [Adding modules and plugins locally](https://docs.ansible.com/ansible/latest/dev_guide/developing_locally.html)
+
+The modules `library/xls_to_csv.py` and `library/csv_to_facts.py` can be written to the Ansible “magic” directories.  Modify the `/etc/ansible/ansible.cfg` file to include:
+
+```
+library        = /usr/share/ansible/
+```
+Then use *wget* to download these modules to that directory:
+```
+$ cd /usr/share/ansible
+$ sudo wget https://raw.githubusercontent.com/joelwking/csv-source-of-truth/master/library/csv_to_facts.py
+$ sudo wget https://raw.githubusercontent.com/joelwking/csv-source-of-truth/master/library/xls_to_csv.py
+$ chmod 755 *.py
+```
+To verify installation, issue `ansible-doc csv_to_facts`.
+
 ## Challenges
 ### Data Structure
 Spreadsheets represent data in a tabular data format similar to a relational database. The database stores data in objects called tables, which consist of columns and rows. The columns include a column name and other attributes.
@@ -158,7 +175,7 @@ By reviewing the column headers in the output files, the cell contents of each r
 
 #### Read CSV, expose as variables to a playbook
 
-The module `csv_to_facts` reads a CSV file and returns as Ansible facts a list of dictionaries for each row. The column header is the key, the contents of the cell is the value.
+The module `library/csv_to_facts.py` reads a CSV file and returns as Ansible facts a list of dictionaries for each row. The column header is the key, the contents of the cell is the value.
 
 For example, assume there are two data centers, (DC1 and DC2) each with an APIC Clusters managing the policy of their respective domain. Each data center will have one or more tenants, each tenant may have one or more VRFs, Bridge Domains, and so on. The tabular data, therefore, will have redundant information at the root of the tree.
 
