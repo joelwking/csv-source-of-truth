@@ -1,14 +1,53 @@
 # csv-source-of-truth
-Collection of modules and documentation to enable using Microsoft Excel (and CSV files) as a Source of Truth
+Collection of modules and documentation to enable using Microsoft Excel (and CSV files) as a Source of Truth.
 
 ## Overview
-The goal of this effort is to enable using a on-line or local spreadsheet program (Microsoft Excel) to define the configuration of a network fabric, in our use case, Cisco Application Centric Infrastructure (ACI).
+The goal of this effort is to enable using a on-line or local spreadsheet program (Microsoft Excel) to define the configuration of a network fabric. The use case which prompted this development is automating the configuration of Cisco Application Centric Infrastructure (ACI) using Ansible. However, these modules have value to other target devices in the infrastructure.
+
+## Why use a Spreadsheet?
 
 Microsoft Excel is readily available, provides a high degree of functionality for data visualization and analysis, and is commonly used by network engineers for the definition of data center fabrics.
 
 While YAML is a human-readable data serialization language and perhaps more suitable, especially given using Ansible as a configuration management tool, the whitespace indentation to provide structure can be confusing initially to the non-programmer.
 
+
+### Data Structure
+Spreadsheets represent data in a tabular data format similar to a relational database. The database stores data in objects called tables, which consist of columns and rows. The columns include a column name and other attributes.
+
+The spreadsheet file (.xlsx) is analogous to a database, while one or more *sheets* in the file are analogous to tables in the database. 
+
+In our use case, configuring a Cisco ACI fabric, the Cisco Application Policy Infrastructure Controller (Cisco APIC) manages the model of the ACI fabric in a hierarchical (tree) structure. At the top of the tree structure is the root (*topRoot*) and the policy Universe (*polUni*) is contained by topRoot. 
+
+The challenge in using a spreadsheet to represent the configuration of the ACI fabric focuses on optimizing and eliminating redundancy in the tabular format of the sheet to a hierarchal structure of the APIC Management Information Tree (MIT).
+
+### Elimination of Manual Operations
+While the network administrator can manually issue a `File -> Save As` in Excel to create the CSV ("comma-separated values") files needed for the work-flow, this manual operation can be done programmatically.
+
+The benefits of developing a programmatic interface include the following:
+
+* Sheet names are verified to be valid file names 
+* Column headers verified to be valid variable names 
+* The playbook specifies and extracts only the necessary sheet(s) from the spreadsheet file
+* Eliminates human error in saving sheets
+
+Note: the spreadsheet file can be stored in a SCM (Source Code Management System) with the Ansible playbooks, or downloaded by the playbook using the `uri` module.
+
+## What is Included?
+
+This repository contains the following modules in the `/library/` directory:
+
+- `xls_to_csv.py`    Read an Excel .xlsx file and output .csv files for each sheet specified
+- `csv_to_facts.py`  Reads a CSV file and returns as ansible facts a list of dictionaries for each row
+
+The two modules can be executed in sequence, `xls_to_csv.py` can be used to extract sheets from a spreadsheet into individual CSV files, and in a subsequent task or play, `csv_to_facts.py` can be used to expose the data from a CSV file as variables to a playbook. Either module can be used independently of the other. 
+
+The module `csv_to_facts.py` was originally developed in 2015. It remains at the [original](https://github.com/joelwking/ansible-nxapi) (now deprecated) location. The design goal of these modules subscribes to the UNIX philosophy of *Make each program do one thing well. To do a new job, build afresh rather than complicate old programs by adding new "features".*, which is why `xls_to_csv.py` was developed as a separate module.
+
 ## Installation
+
+If your intent is to use these modules with Ansible Tower or with a multi-user system, you may which to install these modules in a common location.
+
+### Install to an Existing System
 Refer to the instructions for [Adding modules and plugins locally](https://docs.ansible.com/ansible/latest/dev_guide/developing_locally.html)
 
 The modules `library/xls_to_csv.py` and `library/csv_to_facts.py` can be written to the Ansible “magic” directories.  Modify the `/etc/ansible/ansible.cfg` file to include:
@@ -25,29 +64,22 @@ $ chmod 755 *.py
 ```
 To verify installation, issue `ansible-doc csv_to_facts`.
 
-## Challenges
-### Data Structure
-Spreadsheets represent data in a tabular data format similar to a relational database. The database stores data in objects called tables, which consist of columns and rows. The columns include a column name and other attributes.
+### Install using Vagrant
+Alternately, if you only wish to create a test environment using [Vagrant](https://www.vagrantup.com/), there is a sample configuration file in `files/vagrant/`.  After issuing the `vagrant up` command using the Vagrantfile in this repository, `vagrant ssh` and complete the configuration with the following commands.
 
-The spreadsheet file (.xlsx) is analogous to a database, while one or more *sheets* in the file are analogous to tables in the database. 
+```bash
+$ git clone https://github.com/joelwking/csv-source-of-truth.git
+$ export ANSIBLE_LIBRARY=$HOME/csv-source-of-truth/library
+$ export ANSIBLE_DEPRECATION_WARNINGS=False
+$ sudo pip install xlrd pandas
+$ cd csv-source-of-truth
+```
+**Note:** This README file was tested using the Ansible 2.8.1 release.
 
-In our use case, configuring a Cisco ACI fabric, the Cisco Application Policy Infrastructure Controller (Cisco APIC) manages the model of the ACI fabric in a hierarchical (tree) structure. At the top of the tree structure is the root (*topRoot*) and the policy Universe (*polUni*) is contained by topRoot. 
+## Demonstration
+This section illustrates using the modules to extract and manipulate data used for configuring a Cisco ACI fabric. A sample spreadsheet is available in `files/aci/`.
 
-The challenge in using a spreadsheet to represent the configuration of the ACI fabric focuses on optimizing and eliminating redundancy in the tabular format of the sheet to a hierarchal structure of the APIC Management Information Tree (MIT). 
-
-### Elimination of Manual Operations
-While the network administrator can manually issue a `File -> Save As` in Excel to create the CSV ("comma-separated values") files needed for the work-flow, this manual operation can be done programmatically.
-
-The benefits of developing a programmatic interface include the following:
-
-* Sheet names are verified to be valid file names 
-* Column headers verified to be valid variable names 
-* The playbook specifies and extracts only the necessary sheet(s) from the spreadsheet file
-* Eliminates human error in saving sheets
-
-Note: the spreadsheet file can be stored in a SCM (Source Code Management System) with the Ansible playbooks, or downloaded by the playbook using the `uri` module.
-
-#### Create CSV 
+### Create CSV 
 The module  `library/xls_to_csv.py`  reads an Excel .xlsx file and writes .csv file(s).
 
 The input file `files/aci/ACI_DHCP_configuration.xlsx`  contains two sheets, *"DHCP Relay"*, and *"data_centers"*. 
@@ -57,14 +89,14 @@ The module is executed as an Ansible *ad-hoc* command to verify the sheet names.
 
 ```bash
 
-/csv-source-of-truth$ ansible localhost -m xls_to_csv -a "src='/csv-source-of-truth/files/aci/ACI_DHCP_configuration.xlsx' dest=/tmp sheets='' warn=true"
+vagrant@ubuntu-xenial:~/csv-source-of-truth$ ansible localhost -m xls_to_csv -a "src='$HOME/csv-source-of-truth/files/a
+ci/ACI_DHCP_configuration.xlsx' dest=/tmp sheets='' warn=true"
  [WARNING]: sheet "DHCP Relay" found in source file, skipping
 
  [WARNING]: sheet "data_centers" found in source file, skipping
 
 localhost | SUCCESS => {
     "ansible_facts": {
-        "discovered_interpreter_python": "/usr/bin/python",
         "sheet_filenames": []
     },
     "changed": false
@@ -72,18 +104,16 @@ localhost | SUCCESS => {
 ```
 Because no sheets were written, the changed flag returned is set to 'false'.
 
-**Note:** The environment is using the Ansible 2.8.0 release.
-
 #### Naming Requirement
 The module has a function to convert the sheet names and column headers to valid file and variable names. Ansible variable names must be letters, numbers and underscores and must start with a letter. The function removes special characters (other than an underscore) and spaces. 
 
 Run the module as an ad-hoc command and specifying the sheet "DHCP Relay". Note the module removed the embedded space in the sheet named "DHCP Relay" and exported the contents to */tmp/DHCPRelay*.
 
 ```bash
-/csv-source-of-truth$ ansible localhost -m xls_to_csv -a "src='/csv-source-of-truth/files/aci/ACI_DHCP_configuration.xlsx' dest=/tmp sheets='DHCP Relay'"
+vagrant@ubuntu-xenial:~/csv-source-of-truth$ ansible localhost -m xls_to_csv -a "src='$HOME/csv-source-of-truth/files/a
+ci/ACI_DHCP_configuration.xlsx' dest=/tmp sheets='DHCP Relay'"
 localhost | CHANGED => {
     "ansible_facts": {
-        "discovered_interpreter_python": "/usr/bin/python",
         "sheet_filenames": [
             "DHCPRelay"
         ]
@@ -130,34 +160,38 @@ Review `test_xls.yml`. The `xls_to_csv` module is executed specifying the source
 From running the module as an Ansible ad-hoc command, we can identify the names of the sheets in the spreadsheet file. The *sheets* variable is a list of sheets we wish to extract from the spreadsheet file and write the result to individual CSV files. Execute the `test_xls.yml` playbook and specify the tag *play1* which identifies the first play in the YAML file.
 
 ```bash
-/csv-source-of-truth$ ./test_xls.yml --tags play1
+vagrant@ubuntu-xenial:~/csv-source-of-truth$ ansible-playbook ./test_xls.yml --tags play1
+ [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match
+'all'
 
-PLAY [localhost] ************************************************************************************
-TASK [Extract the sheets from the Excel file, creating CSV files] ***********************************
+
+PLAY [localhost] *******************************************************************************************************
+
+TASK [Extract the sheets from the Excel file, creating CSV files] ******************************************************
 changed: [localhost]
 
-TASK [debug] ****************************************************************************************
-ok: [localhost] => (item=data_centers) => {}
+TASK [debug] ***********************************************************************************************************
+ok: [localhost] => (item=data_centers) => {
+    "msg": "File /home/vagrant/csv-source-of-truth/files/aci/data_centers.csv has been created"
+}
+ok: [localhost] => (item=DHCPRelay) => {
+    "msg": "File /home/vagrant/csv-source-of-truth/files/aci/DHCPRelay.csv has been created"
+}
 
-MSG:
+PLAY [localhost] *******************************************************************************************************
 
-File /csv-source-of-truth/files/aci/data_centers.csv has been created
+PLAY [localhost] *******************************************************************************************************
 
-ok: [localhost] => (item=DHCPRelay) => {}
+PLAY [localhost] *******************************************************************************************************
 
-MSG:
-
-File /csv-source-of-truth/files/aci/DHCPRelay.csv has been created
-
-PLAY RECAP ******************************************************************************************
-localhost                  : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0  
-
+PLAY RECAP *************************************************************************************************************
+localhost                  : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
 ```
 
 #### Determine the Column Header Names
 The column headers of the CSV file(s) can be identified by looking at the first record in each output file.
 ```bash
-/csv-source-of-truth$ head -1 ./files/aci/*.csv
+vagrant@ubuntu-xenial:~/csv-source-of-truth$ head -1 ./files/aci/*.csv
 ==> ./files/aci/data_centers.csv <==
 city,address1,DC,state,postalcode,fullname,Tenant
 
@@ -184,7 +218,7 @@ Looking at the sample data (file DHCPRelay.csv), there are 15 rows of data, repr
 While there are a number of columns in each row that describe the configuration of the ACI fabric(s), for this explanation we will focus on the column *DC* (data center), and *Tenant*.
 
 ```bash
-/csv-source-of-truth$ cat ./files/aci/DHCPRelay.csv | cut -d ',' -f 4,9
+vagrant@ubuntu-xenial:~/csv-source-of-truth$ cat ./files/aci/DHCPRelay.csv | cut -d ',' -f 4,9
 DC,Tenant
 DC1,XXV-INT
 DC1,XXV-DMZ
@@ -226,22 +260,22 @@ The default behavior of `csv_to_facts` is to return as facts the content of the 
 By executing the playbook, we iterate over the list variable *spreadsheet* and reference the *DC* and *Tenant* columns. The list spreadsheet has a length of 15, each list item corresponds to a row in the CSV file.
 
 ```bash
-/csv-source-of-truth$ ./test_xls.yml --tags play2
+vagrant@ubuntu-xenial:~/csv-source-of-truth$ ansible-playbook ./test_xls.yml --tags play2
+ [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match
+'all'
 
-PLAY [localhost] ***************************************************************************************************
 
-PLAY [localhost] ***************************************************************************************************
+PLAY [localhost] *******************************************************************************************************
 
-TASK [Default behavior of csv_to_facts] ****************************************************************************
+PLAY [localhost] *******************************************************************************************************
+
+TASK [Default behavior of csv_to_facts] ********************************************************************************
 ok: [localhost]
 
-TASK [debug] *******************************************************************************************************
-ok: [localhost] => (item={u'BD': u'BD-BOX-RAZOR', u'AppProfile': u'AP-PRD', u'VLAN': u'39', u'DC': u'DC1', u'L3Out': u'ERN-N7KCORESW-L3OUT', u'VRF': u'VRF-XXV-INT', u'EPG': u'EPG-BOX-RAZOR', u'DHCP': u'Yes', u'Tenant': u'XXV-INT'}) => {}
-
-MSG:
-
-DC1 XXV-INT
-
+TASK [debug] ***********************************************************************************************************
+ok: [localhost] => (item={u'BD': u'BD-BOX-RAZOR', u'AppProfile': u'AP-PRD', u'VLAN': u'39', u'DC': u'DC1', u'L3Out': u'ERN-N7KCORESW-L3OUT', u'VRF': u'VRF-XXV-INT', u'EPG': u'EPG-BOX-RAZOR', u'DHCP': u'Yes', u'Tenant': u'XXV-INT'}) => {
+    "msg": "DC1 XXV-INT"
+}
 ```
 **Note:** The output of the above execution was truncated for brevity, only the first row was shown. 
 
@@ -337,32 +371,25 @@ By using the *vsheets* argument, specify a list of virtual spreadsheets you wish
 Executing the play with verbose mode (*-v*) illustrates the variable TENANTs is a list of unique values of columns DC and Tenant.
 
 ```bash
-csv-source-of-truth$ ./test_xls.yml --tags play3 -v
-Using /home/administrator/ansible/playbooks/ansible.cfg as config file
 
-PLAY [localhost] **********************************************************************************************
+vagrant@ubuntu-xenial:~/csv-source-of-truth$ ansible-playbook ./test_xls.yml --tags play3 -v
+Using /etc/ansible/ansible.cfg as config file
+ [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match
+'all'
 
-TASK [Create virtual spreadsheet of data centers (DC) and tenants] ********************************************
-ok: [localhost] => {
-    "ansible_facts": {
-        "TENANTs": [
-            {
-                "DC": "DC2",
-                "Tenant": "XXV-INT"
-            },
-            {
-                "DC": "DC1",
-                "Tenant": "XXV-DMZ"
-            },
-            {
-                "DC": "DC2",
-                "Tenant": "XXV-DMZ"
-            },
-            {
-                "DC": "DC1",
-                "Tenant": "XXV-INT"
-            }
-        ],
+PLAY [localhost] *******************************************************************************************************
+
+PLAY [localhost] *******************************************************************************************************
+
+PLAY [localhost] *******************************************************************************************************
+
+TASK [Create virtual spreadsheet of data centers (DC) and tenants] *****************************************************
+ok: [localhost] => {"ansible_facts": {"TENANTs": [{"DC": "DC2", "Tenant": "XXV-INT"}, {"DC": "DC1", "Tenant": "XXV-DMZ"}, {"DC": "DC2", "Tenant": "XXV-DMZ"}, {"DC": "DC1", "Tenant": "XXV-INT"}],  "changed": false}
+
+PLAY [localhost] *******************************************************************************************************
+
+PLAY RECAP *************************************************************************************************************
+localhost                  : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
 
 ```
 **Note:** The output of the above execution was truncated for brevity.
@@ -371,9 +398,44 @@ ok: [localhost] => {
 The module `xls_to_csv` returns the variable 'sheet_filenames'. By executing plays 1 and 4, the variable `sheet_filenames` can be referenced in subsequent play(s). Execute plays by specifying the tags. 
 
 ```bash
-/csv-source-of-truth$ ./test_xls.yml --tags 'play1, play4'
+vagrant@ubuntu-xenial:~/csv-source-of-truth$  ansible-playbook ./test_xls.yml --tags 'play1, play4'
+ [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match
+'all'
 
+
+PLAY [localhost] ********************************************************************************************************
+
+TASK [Extract the sheets from the Excel file, creating CSV files] *******************************************************
+changed: [localhost]
+
+TASK [debug] ************************************************************************************************************
+ok: [localhost] => (item=data_centers) => {
+    "msg": "File /home/vagrant/csv-source-of-truth/files/aci/data_centers.csv has been created"
+}
+ok: [localhost] => (item=DHCPRelay) => {
+    "msg": "File /home/vagrant/csv-source-of-truth/files/aci/DHCPRelay.csv has been created"
+}
+
+PLAY [localhost] ********************************************************************************************************
+
+PLAY [localhost] ********************************************************************************************************
+
+PLAY [localhost] ********************************************************************************************************
+
+TASK [Create summarized virtual sheets, loading the variables in a namespace using the filename] ************************
+ok: [localhost] => (item=data_centers)
+ok: [localhost] => (item=DHCPRelay)
+
+TASK [debug] ************************************************************************************************************
+ok: [localhost] => (item={u'address1': u'1745 T Street Southeast', u'DC': u'DC1', u'Tenant': u'XXV-INT'}) => {
+    "msg": {
+        "DC": "DC1",
+        "Tenant": "XXV-INT",
+        "address1": "1745 T Street Southeast"
+    }
+}
 ```
+**Note:** The output of the above execution was truncated for brevity.
 
 ### Sample Use Case
 
@@ -401,32 +463,30 @@ Extra vars are passed from the command line to select the appropriate data cente
 In this example, the *debug* module is used in lieu of the appropriate Ansible ACI module(s). For more information on using Ansible to configure an ACI fabric, please refer to the [Cisco ACI Guide](https://docs.ansible.com/ansible/latest/scenario_guides/guide_aci.html)
 
 ```bash
-/csv-source-of-truth$ ./manage_aci_dhcp.yml -e "data_center=DC1 ticket=CHG58234"
+vagrant@ubuntu-xenial:~/csv-source-of-truth$ ansible-playbook -i ./files/inventory.yml ./manage_aci_dhcp.yml -e "data_ce
+nter=DC1 ticket=CHG58234"
 
-PLAY [localhost] *********************************************************************************************
+PLAY [localhost] ********************************************************************************************************
 
-TASK [Extract the sheets from the Excel file, creating CSV file(s)] ******************************************
+TASK [Extract the sheets from the Excel file, creating CSV file(s)] *****************************************************
  [WARNING]: sheet "data_centers" found in source file, skipping
 
 changed: [localhost]
 
-PLAY [APIC] **************************************************************************************************
+PLAY [APIC] *************************************************************************************************************
 
-TASK [Summarize the sheet and include as facts] **************************************************************
+TASK [Summarize the sheet and include as facts] *************************************************************************
 ok: [aci-demo.sandbox.wwtatc.local]
 
-TASK [Associate multiple DHCP servers with a Tenant, Bridge Domain] ******************************************
-ok: [aci-demo.sandbox.wwtatc.local] => (item=[{u'BD': u'BD-BOX-RAZOR', u'AppProfile': u'AP-PRD', u'EPG': u'EPG-BOX-RAZOR', u'DHCP': u'Yes', u'DC': u'DC1', u'Tenant': u'XXV-INT'}, {'value': {u'dn': u'uni/tn-WWT_NULL/ap-MANAGEMENT/epg-DHCP', u'addr': u'198.51.100.17'}, 'key': u'DHCP-DC2-PRD'}]) => {}
+TASK [Associate multiple DHCP servers with a Tenant, Bridge Domain] *****************************************************
+ok: [aci-demo.sandbox.wwtatc.local] => (item=[{u'BD': u'BD-BOX-RAZOR', u'AppProfile': u'AP-PRD', u'EPG': u'EPG-BOX-RAZOR', u'DHCP': u'Yes', u'DC': u'DC1', u'Tenant': u'XXV-INT'}, {'value': {u'dn': u'uni/tn-WWT_NULL/ap-MANAGEMENT/epg-DHCP', u'addr': u'198.51.100.17'}, 'key': u'DHCP-DC2-PRD'}]) => {
+    "msg": "Apply to tenant=XXV-INT BD=BD-BOX-RAZOR DHCP Label=DHCP-DC2-PRD server=198.51.100.17 dn=uni/tn-WWT_NULL/ap-MANAGEMENT/epg-DHCP"
+}
+ok: [aci-demo.sandbox.wwtatc.local] => (item=[{u'BD': u'BD-BOX-RAZOR', u'AppProfile': u'AP-PRD', u'EPG': u'EPG-BOX-RAZOR', u'DHCP': u'Yes', u'DC': u'DC1', u'Tenant': u'XXV-INT'}, {'value': {u'dn': u'uni/tn-common/out-L3-ATC/instP-L3-ATC', u'addr': u'203.0.113.17'}, 'key': u'DHCP-DC1-PRD'}]) => {
+    "msg": "Apply to tenant=XXV-INT BD=BD-BOX-RAZOR DHCP Label=DHCP-DC1-PRD server=203.0.113.17 dn=uni/tn-common/out-L3-ATC/instP-L3-ATC"
+}
+skipping: [aci-demo.sandbox.wwtatc.local] => (item=[{u'BD': u'BD-BOX-PRVWIN2', u'AppProfile': u'AP-BOX', u'EPG': u'EPG-BOX-PRVWIN2', u'DHCP': u'Yes', u'DC': u'DC2', u'Tenant': u'XXV-INT'}, {'value': {u'dn': u'uni/tn-WWT_NULL/ap-MANAGEMENT/epg-DHCP', u'addr': u'198.51.100.17'}, 'key': u'DHCP-DC2-PRD'}])
 
-MSG:
-
-Apply to tenant=XXV-INT BD=BD-BOX-RAZOR DHCP Label=DHCP-DC2-PRD server=198.51.100.17 dn=uni/tn-WWT_NULL/ap-MANAGEMENT/epg-DHCP
-
-ok: [aci-demo.sandbox.wwtatc.local] => (item=[{u'BD': u'BD-BOX-RAZOR', u'AppProfile': u'AP-PRD', u'EPG': u'EPG-BOX-RAZOR', u'DHCP': u'Yes', u'DC': u'DC1', u'Tenant': u'XXV-INT'}, {'value': {u'dn': u'uni/tn-common/out-L3-ATC/instP-L3-ATC', u'addr': u'203.0.113.17'}, 'key': u'DHCP-DC1-PRD'}]) => {}
-
-MSG:
-
-Apply to tenant=XXV-INT BD=BD-BOX-RAZOR DHCP Label=DHCP-DC1-PRD server=203.0.113.17 dn=uni/tn-common/out-L3-ATC/instP-L3-ATC
 ```
 **Note:** The output of the above execution was truncated for brevity.
 
@@ -435,11 +495,11 @@ Apply to tenant=XXV-INT BD=BD-BOX-RAZOR DHCP Label=DHCP-DC1-PRD server=203.0.113
 For example, because "extra vars" take precedence, specifying *sheet* on the command line will cause the playbook to fail.
 
 ```bash
-/csv-source-of-truth$ ./manage_aci_dhcp.yml -e "data_center=DC1 sheet='DHCP Relay' ticket=CHG58234"
+vagrant@ubuntu-xenial:~/csv-source-of-truth$ ansible-playbook -i ./files/inventory.yml ./manage_aci_dhcp.yml -e "data_center=DC1 sheet='DHCP Relay' ticket=CHG58234"
 ```
 
 ## Summary
-Organizing and managing the Source of Truth for configuring infrastructure is as important as developing the process (workflow) to effect the configuration. Network engineers commonly use spreadsheets to represent network infrastructure which organize data in a tabular data format similar to a relational database. 
+Organizing and managing the Source of Truth for configuring infrastructure is equally important to developing the process (workflow) to effect the configuration. Network engineers commonly use spreadsheets to represent network infrastructure which organize data in a tabular data format similar to a relational database. 
 
 The modules and playbooks shown in this repository can be used to manipulate and import tabular data for managing infrastructure and used as a framework along with device specific modules.
 

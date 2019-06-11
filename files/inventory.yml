@@ -1,0 +1,5 @@
+all:
+  children:
+    APIC:
+      hosts:
+        aci-demo.sandbox.wwtatc.local: {}

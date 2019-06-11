@@ -1,0 +1,36 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+#
+#      Copyright (c) 2019 World Wide Technology, Inc.
+#      All rights reserved.
+#
+#      author: @joelwking
+#
+#      description: 
+#        Sample Vagrant file for deploying ACI automation using Ansible
+#
+#      usage:
+#        vagrant up
+#
+Vagrant.configure(2) do |config|
+
+  config.vm.box = "ubuntu/xenial64"
+
+  config.vm.network "private_network", ip: "192.168.56.200"
+  
+  config.vm.provision  "shell", inline: <<-SHELL
+  sudo apt-get update
+  sudo apt-get install python-pip -y
+  sudo apt-get install python-dev -y
+  sudo pip install requests
+  sudo pip install pydevd
+  sudo pip install pymongo
+  sudo pip install pyopenssl
+  sudo pip install ansible-tower-cli
+  sudo apt install pylint -y
+  sudo apt-get install git -y 
+  sudo apt-get install software-properties-common -y
+  sudo apt-add-repository --yes --update ppa:ansible/ansible
+  sudo apt-get install ansible -y
+  SHELL
+end
