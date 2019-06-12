@@ -466,7 +466,7 @@ To illustrate the use of both the `xls_to_csv` and the `csv_to_facts` modules,
 
 Review the playbook *manage_aci_dhcp.yml*.  This playbook contains two plays. 
 
-The first play uses `xls_to_csv` reading the input file located in */files/aci/ACI_DHCP_configuration.xlsx*, selects sheet 'DHCP Relay' and writes it to a CSV file in the same directory with a file name of 'DHCPRelay.csv'
+The first play uses `xls_to_csv` reading the input file located in *files/aci/ACI_DHCP_configuration.xlsx*, selects sheet 'DHCP Relay' and writes it to a CSV file in the same directory with a file name of 'DHCPRelay.csv'
 
 The second play uses `csv_to_facts`. This module creates a list variable named *DHCPentries* which includes these columns from the sheet 'DHCP Relay'. 
 
