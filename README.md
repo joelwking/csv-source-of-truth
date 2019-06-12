@@ -164,6 +164,7 @@ Review `test_xls.yml`. The `xls_to_csv` module is executed specifying the source
       tags: [debug]
 
 ```
+---
 **Tip:** As a best practice, specify your source and target directories relative to the playbook directory, for example: '{{ playbook_dir }}/files' as the destination directory. 
 
 Running the module as an Ansible ad-hoc command, we can identify the names of the sheets in the spreadsheet file. The *sheets* variable is a list of sheets we wish to extract from the spreadsheet file and write the result to individual CSV files. Execute the `test_xls.yml` playbook and specify the tag *play1* which identifies the first play in the YAML file.
@@ -213,6 +214,7 @@ BD,AppProfile,VLAN,DC,L3Out,VRF,DHCP,EPG,Tenant
 ```
 Because the column headers are used as variable names by playbooks, issue the `head -1` command for each file to identify the column headers.  
 
+---
 **Tip:** Knowing the column headers is important for converting the CSV file to Ansible facts in the `csv_to_facts` module described later.
 
 #### Summary
@@ -290,6 +292,7 @@ ok: [localhost] => (item={u'BD': u'BD-BOX-RAZOR', u'AppProfile': u'AP-PRD', u'VL
     "msg": "DC1 XXV-INT"
 }
 ```
+---
 **Note:** The output of the above execution was truncated for brevity, only the first row was shown. 
 
 **Tip:** The argument *table* can be specified to provide a value other than the default value of *spreadsheet*. Use `ansible-doc csv_to_facts` for more details.
@@ -477,7 +480,7 @@ The second task (Associate multiple DHCP servers with a Tenant, Bridge Domain) i
 
 Extra vars are passed from the command line to select the appropriate data center and test if the variable *DHCP* is True (specified as 'Yes' in the sheet).
 
-In this example, the *debug* module is used as a placeholder for the appropriate Ansible ACI module(s). For more information on using Ansible to configure an ACI fabric, please refer to the [Cisco ACI Guide](https://docs.ansible.com/ansible/latest/scenario_guides/guide_aci.html)
+In this example, the *debug* module is used as a placeholder for the appropriate Ansible ACI module(s). For more information on using Ansible to configure an ACI fabric, please refer to the [Cisco ACI Guide](https://docs.ansible.com/ansible/latest/scenario_guides/guide_aci.html).
 
 ```bash
 vagrant@ubuntu-xenial:~/csv-source-of-truth$ ansible-playbook -i ./files/inventory.yml ./manage_aci_dhcp.yml -e "data_ce
@@ -505,6 +508,7 @@ ok: [aci-demo.sandbox.wwtatc.local] => (item=[{u'BD': u'BD-BOX-RAZOR', u'AppProf
 skipping: [aci-demo.sandbox.wwtatc.local] => (item=[{u'BD': u'BD-BOX-PRVWIN2', u'AppProfile': u'AP-BOX', u'EPG': u'EPG-BOX-PRVWIN2', u'DHCP': u'Yes', u'DC': u'DC2', u'Tenant': u'XXV-INT'}, {'value': {u'dn': u'uni/tn-WWT_NULL/ap-MANAGEMENT/epg-DHCP', u'addr': u'198.51.100.17'}, 'key': u'DHCP-DC2-PRD'}])
 
 ```
+---
 **Note:** The output of the above execution was truncated for brevity.
 
 **Tip:** Between play 1 and play 2, the variable *sheet* is a different format, the embedded space has been eliminated by module `xls_to_csv`.  This illustrates the importance of creating spreadsheet and column names that do not contain spaces or special characters. 
@@ -526,7 +530,7 @@ The modules and playbooks shown in this repository can be used to manipulate and
 None.
 
 ## Getting Help
-If you have questions or comments on network and infrastructure automation in general or these modules, please contact the author or AutomationTeam@wwt.com
+If you have questions or comments on network and infrastructure automation in general or these modules, please contact the author or AutomationTeam@wwt.com.
 
 ## Credits and References
 
