@@ -50,12 +50,17 @@ which is why `xls_to_csv.py` was developed as a separate module.
 If your intent is to use these modules with Ansible Tower or with a multi-user system, you may which to install them in a common location on an existing system. You can also use an ephemeral environment using Vagrant.
 
 ### Requirements
-Python packages pandas and xlrd are required if using `library/xls_to_csv.py`. They can be installed using PIP.
+Python packages **pandas** and **xlrd** are required if using `library/xls_to_csv.py`. They can be installed using Pip.
 ```
 $ sudo pip install xlrd pandas
 ```
 
-### Install to an Existing System
+### How to Test the Software
+If you have Ansible Tower installed on an existing system you can download the modules to a shared directory and modify the Ansible configuration file to identify the location.
+
+Alternately, you can create an ephemeral test environment using Vagrant.
+
+#### Install to an Existing System
 Refer to the instructions for [Adding modules and plugins locally.](https://docs.ansible.com/ansible/latest/dev_guide/developing_locally.html)
 
 The modules `library/xls_to_csv.py` and `library/csv_to_facts.py` can be written to the Ansible 'magic' directories.  Modify the `/etc/ansible/ansible.cfg` file to include:
@@ -72,7 +77,7 @@ $ chmod 755 *.py
 ```
 To verify installation, issue `ansible-doc csv_to_facts`.
 
-### Install using Vagrant
+#### Install using Vagrant
 Alternately, if you only wish to create a test environment using [Vagrant](https://www.vagrantup.com/), there is a sample configuration file in `files/vagrant/`.  After issuing the `vagrant up` command using the Vagrantfile in this repository, `vagrant ssh` and complete the configuration with the following commands:
 
 ```bash
@@ -84,7 +89,7 @@ $ cd csv-source-of-truth
 ```
 **Note:** This README file was tested using the Ansible 2.8.1 release.
 
-## Demonstration
+## Usage
 This section illustrates using the modules to extract and manipulate data used for configuring a Cisco ACI fabric. A sample spreadsheet is available in `files/aci/`. You may wish familiarize yourself with the contents of that spreadsheet prior to completing the following examples.
 
 ### Create CSV 
@@ -517,5 +522,16 @@ Organizing and managing the Source of Truth for configuring infrastructure is eq
 
 The modules and playbooks shown in this repository can be used to manipulate and import tabular data for managing infrastructure devices. 
 
+## Known Issues
+None.
+
+## Getting Help
+If you have questions or comments on network and infrastructure automation in general or these modules, please contact the author or AutomationTeam@wwt.com
+
+## Credits and References
+
+* [Enabling policy migration in the Data Center with Ansible ](https://www.slideshare.net/joelwking/enabling-policy-migration-in-the-data-center-with-ansible) presented at the Ansible Durham Meetup 17April 2019
+* [Super-NetOps Source of Truth ](https://www.slideshare.net/joelwking/supernetops-source-of-truth-110053045) presented at F5 Agility conference August 2018
+
 ## Author
-Joel W. King (@joelwking) joel.king@wwt.com of World Wide Technology
+Joel W. King (@joelwking) joel.king@wwt.com - Engineering and Innovations, Network Solutions, World Wide Technology
