@@ -28,7 +28,7 @@ The benefits of developing a programmatic interface include the following:
 * The playbook specifies and extracts only the necessary sheet(s) from the spreadsheet file
 * Eliminates human error in saving sheets
 
-Note: the spreadsheet file can be stored in a SCM (Source Code Management System) with the Ansible playbooks, or downloaded by the playbook using the `uri` module.
+The spreadsheet file can be stored in a SCM (Source Code Management System) with the Ansible playbooks, or downloaded by the playbook using the `uri` module.
 
 ## What is Included?
 
@@ -87,8 +87,9 @@ $ export ANSIBLE_DEPRECATION_WARNINGS=False
 $ sudo pip install xlrd pandas
 $ cd csv-source-of-truth
 ```
+---
 **Note:** This README file was tested using the Ansible 2.8.1 release.
-
+---
 ## Usage
 This section illustrates using the modules to extract and manipulate data used for configuring a Cisco ACI fabric. A sample spreadsheet is available in `files/aci/`. You may wish familiarize yourself with the contents of that spreadsheet prior to completing the following examples.
 
@@ -166,7 +167,7 @@ Review `test_xls.yml`. The `xls_to_csv` module is executed specifying the source
 ```
 ---
 **Tip:** As a best practice, specify your source and target directories relative to the playbook directory, for example: '{{ playbook_dir }}/files' as the destination directory. 
-
+---
 Running the module as an Ansible ad-hoc command, we can identify the names of the sheets in the spreadsheet file. The *sheets* variable is a list of sheets we wish to extract from the spreadsheet file and write the result to individual CSV files. Execute the `test_xls.yml` playbook and specify the tag *play1* which identifies the first play in the YAML file.
 
 This step extracts the selected sheets and writes them to the destination directory.
@@ -216,7 +217,7 @@ Because the column headers are used as variable names by playbooks, issue the `h
 
 ---
 **Tip:** Knowing the column headers is important for converting the CSV file to Ansible facts in the `csv_to_facts` module described later.
-
+---
 #### Summary
 This section illustrates programmatically extracting one or more sheets from a spreadsheet file. This enables the network engineer to use a spreadsheet program, like Microsoft Excel, to define the initial state of the network infrastructure. The `xls_to_csv` module is used to identify and extract the sheet names in the spreadsheet file, writing the contents of the sheet to a CSV formatted file.
 
@@ -296,6 +297,7 @@ ok: [localhost] => (item={u'BD': u'BD-BOX-RAZOR', u'AppProfile': u'AP-PRD', u'VL
 **Note:** The output of the above execution was truncated for brevity, only the first row was shown. 
 
 **Tip:** The argument *table* can be specified to provide a value other than the default value of *spreadsheet*. Use `ansible-doc csv_to_facts` for more details.
+---
 
 #### Optimizing Tabular Data
 Because a spreadsheet represents data in a tabular format, and the ACI fabric configuration is stored in a Management Information Tree (a hierarchical) structure, there will be repetitive data defined in the sheet.
@@ -410,8 +412,9 @@ PLAY RECAP *********************************************************************
 localhost                  : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
 
 ```
+---
 **Note:** The output of the above execution was truncated for brevity.
-
+---
 #### Sheet Filenames
 The module `xls_to_csv` returns the variable `sheet_filenames`.  This variable can be referenced in subsequent tasks or plays to identify the names of the files created.
 
@@ -455,8 +458,9 @@ ok: [localhost] => (item={u'address1': u'1745 T Street Southeast', u'DC': u'DC1'
     }
 }
 ```
+---
 **Note:** The output of the above execution was truncated for brevity.
-
+---
 ### Sample Use Case
 
 To illustrate the use of both the `xls_to_csv` and the `csv_to_facts` modules, 
@@ -510,8 +514,10 @@ skipping: [aci-demo.sandbox.wwtatc.local] => (item=[{u'BD': u'BD-BOX-PRVWIN2', u
 ```
 ---
 **Note:** The output of the above execution was truncated for brevity.
+---
 
-**Tip:** Between play 1 and play 2, the variable *sheet* is a different format, the embedded space has been eliminated by module `xls_to_csv`.  This illustrates the importance of creating spreadsheet and column names that do not contain spaces or special characters. 
+**Tip:** Between play 1 and play 2, the variable *sheet* is a different format, the embedded space has been eliminated by module `xls_to_csv`.  This illustrates the importance of creating spreadsheet and column names that do not contain spaces or special characters.
+---
 
 For example, because "extra vars" take precedence, specifying *sheet* on the command line will cause the playbook to fail. To illustrate execute the following command:
 
