@@ -1,0 +1,10 @@
+csv-source-of-truth
+Copyright (c) 2019 World Wide Technology
+All rights reserved.
+
+This project includes software developed at World Wide Technology
+
+This project includes:
+
+  xlrd    - an open source, BSD-licensed library  https://pypi.org/project/xlrd/
+  pandas  - an open source, BSD-licensed library  https://pandas.pydata.org/
