@@ -1,6 +1,8 @@
 # csv-source-of-truth
 Collection of modules and documentation to enable using Microsoft Excel (and CSV files) as a Source of Truth for configuration data.
 
+[![published](https://static.production.devnetcloud.com/codeexchange/assets/images/devnet-published.svg)](https://developer.cisco.com/codeexchange/github/repo/joelwking/csv-source-of-truth)
+
 ## Overview
 The goal of this effort is to enable using a on-line or local spreadsheet program (Microsoft Excel) to define the configuration of a network fabric. The use case which prompted this development is automating the configuration of Cisco Application Centric Infrastructure (ACI) using Ansible. However, these modules have value to other devices in the network infrastructure.
 
