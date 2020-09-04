@@ -182,7 +182,7 @@ def read_csv_dict(input_file, table_name, vsheets):
         if len(item) is not 1:
             return(ERROR, "only one virtual sheet name per item")
 
-        ovs = virt_spreadsheet(item.keys()[0], item[item.keys()[0]], spreadsheet[table_name])
+        ovs = virt_spreadsheet(list(item.keys())[0], item[list(item.keys())[0]], spreadsheet[table_name])
         ovs.populate_sheet()
         if ovs.error:
             return(ERROR, ovs.error)
