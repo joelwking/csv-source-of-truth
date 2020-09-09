@@ -110,7 +110,7 @@ The sample  input file `files/aci/ACI_DHCP_configuration.xlsx`  contains two she
 The module is executed as an Ansible *ad-hoc* command to verify the sheet names. Run the module with an empty string for the *sheets* argument and the *warn* option to verify the sheet names. The module reports the names of the sheets located in the source file.  By using the host name of `python` and the `inventory.yml` file, both Python 2 and Python 3 are verified.
 
 ```bash
-vagrant@ubuntu-bionic:~/csv-source-of-truth$ ansible python -m xls_to_csv -a "src='$HOME/csv-source-of-truth/files/aci/ACI_DHCP_configuration.xlsx' dest=/tmp sheets='' warn=true" -i ./inventory.yml
+vagrant@ubuntu-bionic:~/csv-source-of-truth$ ansible python -m xls_to_csv -a "src='$HOME/csv-source-of-truth/files/aci/ACI_DHCP_configuration.xlsx' dest=/tmp sheets='' warn=true" -i ./files/inventory.yml
 /usr/lib/python2.7/dist-packages/ansible/parsing/vault/__init__.py:44: CryptographyDeprecationWarning: Python 2 is no longer supported by the Python core team. Support for it is now deprecated in cryptography, and will be removed in a future release.
   from cryptography.exceptions import InvalidSignature
 [WARNING]: sheet "DHCP Relay" found in source file, skipping
@@ -136,7 +136,7 @@ The module converts the sheet names and column headers to valid file and variabl
 Run the module as an ad-hoc command and specifying the sheet "DHCP Relay". Note the module removed the embedded space in the sheet named "DHCP Relay" and exported the contents to */tmp/DHCPRelay*.
 
 ```bash
-vagrant@ubuntu-bionic:~/csv-source-of-truth$ ansible python -m xls_to_csv -a "src='$HOME/csv-source-of-truth/files/aci/ACI_DHCP_configuration.xlsx' dest=/tmp sheets='DHCP Relay'" -i ./inventory.yml
+vagrant@ubuntu-bionic:~/csv-source-of-truth$ ansible python -m xls_to_csv -a "src='$HOME/csv-source-of-truth/files/aci/ACI_DHCP_configuration.xlsx' dest=/tmp sheets='DHCP Relay'" -i ./files/inventory.yml
 /usr/lib/python2.7/dist-packages/ansible/parsing/vault/__init__.py:44: CryptographyDeprecationWarning: Python 2 is no longer supported by the Python core team. Support for it is now deprecated in cryptography, and will be removed in a future release.
   from cryptography.exceptions import InvalidSignature
 python2 | CHANGED => {
@@ -198,17 +198,17 @@ Running the module as an Ansible ad-hoc command, we can identify the names of th
 This step extracts the selected sheets and writes them to the destination directory.
 
 ```bash
-vagrant@ubuntu-bionic:~/csv-source-of-truth$ ansible-playbook ./test_xls.yml --tags play1 -i ./inventory.yml
+vagrant@ubuntu-bionic:~/csv-source-of-truth$ ansible-playbook ./test_xls.yml --tags play1 -i ./files/inventory.yml
 /usr/lib/python2.7/dist-packages/ansible/parsing/vault/__init__.py:44: CryptographyDeprecationWarning: Python 2 is no longer supported by the Python core team. Support for it is now deprecated in cryptography, and will be removed in a future release.
   from cryptography.exceptions import InvalidSignature
 
-PLAY [python] **********************************************************************************************************************
+PLAY [python] *****************************************************************************************************************
 
-TASK [Extract the sheets from the Excel file, creating CSV files] ******************************************************************
+TASK [Extract the sheets from the Excel file, creating CSV files] **************************************************************
 changed: [python2]
 changed: [python3]
 
-TASK [debug] ***********************************************************************************************************************
+TASK [debug] *******************************************************************************************************************
 ok: [python3] => (item=DHCPRelay) => {
     "msg": "File /home/vagrant/csv-source-of-truth/files/aci/DHCPRelay.csv has been created"
 }
@@ -308,15 +308,15 @@ By executing the playbook, we iterate over the list variable *spreadsheet* and r
 Execute play2 to verify the debug module can reference the variables specified in the CSV file.
 
 ```bash
-vagrant@ubuntu-bionic:~/csv-source-of-truth$ ansible-playbook ./test_xls.yml --tags play2 -i inventory.yml
+vagrant@ubuntu-bionic:~/csv-source-of-truth$ ansible-playbook ./test_xls.yml --tags play2 -i ./files/inventory.yml
 /usr/lib/python2.7/dist-packages/ansible/parsing/vault/__init__.py:44: CryptographyDeprecationWarning: Python 2 is no longer supported by the Python core team. Support for it is now deprecated in cryptography, and will be removed in a future release.
   from cryptography.exceptions import InvalidSignature
 
-PLAY [python] **********************************************************************************************************************
+PLAY [python] ******************************************************************************************************************
 
-PLAY [python] **********************************************************************************************************************
+PLAY [python] ******************************************************************************************************************
 
-TASK [Default behavior of csv_to_facts] ********************************************************************************************
+TASK [Default behavior of csv_to_facts] ****************************************************************************************
 ok: [python2]
 ok: [python3]
 
@@ -324,7 +324,6 @@ TASK [debug] *******************************************************************
 ok: [python3] => (item={u'BD': u'BD-BOX-RAZOR', u'AppProfile': u'AP-PRD', u'VLAN': u'39', u'DC': u'DC1', u'L3Out': u'ERN-N7KCORESW-L3OUT', u'VRF': u'VRF-XXV-INT', u'DHCP': u'Yes', u'EPG': u'EPG-BOX-RAZOR', u'Tenant': u'XXV-INT'}) => {
     "msg": "DC1 XXV-INT"
 }
-
 ```
 ---
 **Note:** The output of the above execution was truncated for brevity, only the first row was shown. 
@@ -423,7 +422,7 @@ By using the *vsheets* argument, specify a list of virtual spreadsheets you wish
 Executing the play with verbose mode (*-v*) illustrates the variable TENANTs is a list of unique values of columns DC and Tenant.
 
 ```bash
-vagrant@ubuntu-bionic:~/csv-source-of-truth$ ansible-playbook ./test_xls.yml --tags play3 -i inventory.yml -v
+vagrant@ubuntu-bionic:~/csv-source-of-truth$ ansible-playbook ./test_xls.yml --tags play3 -i ./files/inventory.yml -v
 /usr/lib/python2.7/dist-packages/ansible/parsing/vault/__init__.py:44: CryptographyDeprecationWarning: Python 2 is no longer supported by the Python core team. Support for it is now deprecated in cryptography, and will be removed in a future release.
   from cryptography.exceptions import InvalidSignature
 Using /etc/ansible/ansible.cfg as config file
@@ -446,17 +445,17 @@ The module `xls_to_csv` returns the variable `sheet_filenames`.  This variable c
 By executing plays 1 and 4, the variable `sheet_filenames` can be referenced in subsequent play(s). Execute these plays by specifying their tags. 
 
 ```bash
-vagrant@ubuntu-bionic:~/csv-source-of-truth$  ansible-playbook ./test_xls.yml --tags 'play1, play4' -i inventory.yml
+vagrant@ubuntu-bionic:~/csv-source-of-truth$  ansible-playbook ./test_xls.yml --tags 'play1, play4' -i ./files/inventory.yml
 /usr/lib/python2.7/dist-packages/ansible/parsing/vault/__init__.py:44: CryptographyDeprecationWarning: Python 2 is no longer supported by the Python core team. Support for it is now deprecated in cryptography, and will be removed in a future release.
   from cryptography.exceptions import InvalidSignature
 
-PLAY [python] **********************************************************************************************************************
+PLAY [python] ******************************************************************************************************************
 
-TASK [Extract the sheets from the Excel file, creating CSV files] ******************************************************************
+TASK [Extract the sheets from the Excel file, creating CSV files] **************************************************************
 changed: [python2]
 changed: [python3]
 
-TASK [debug] ***********************************************************************************************************************
+TASK [debug] *******************************************************************************************************************
 ok: [python3] => (item=DHCPRelay) => {
     "msg": "File /home/vagrant/csv-source-of-truth/files/aci/DHCPRelay.csv has been created"
 }
@@ -470,19 +469,19 @@ ok: [python2] => (item=DHCPRelay) => {
     "msg": "File /home/vagrant/csv-source-of-truth/files/aci/DHCPRelay.csv has been created"
 }
 
-PLAY [python] **********************************************************************************************************************
+PLAY [python] ******************************************************************************************************************
 
-PLAY [python] **********************************************************************************************************************
+PLAY [python] ******************************************************************************************************************
 
-PLAY [python] **********************************************************************************************************************
+PLAY [python] ******************************************************************************************************************
 
-TASK [Create summarized virtual sheets, loading the variables in a namespace using the filename] ***********************************
+TASK [Create summarized virtual sheets, loading the variables in a namespace using the filename] *******************************
 ok: [python2] => (item=data_centers)
 ok: [python3] => (item=DHCPRelay)
 ok: [python2] => (item=DHCPRelay)
 ok: [python3] => (item=data_centers)
 
-TASK [debug] ***********************************************************************************************************************
+TASK [debug] *******************************************************************************************************************
 ok: [python3] => (item={u'address1': u'6007 Applegate Lane', u'DC': u'DC2', u'Tenant': u'XXV-DMZ'}) => {
     "msg": {
         "DC": "DC2",
