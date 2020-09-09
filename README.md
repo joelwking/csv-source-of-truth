@@ -100,7 +100,7 @@ $ cd csv-source-of-truth
 ## Usage
 This section illustrates using the modules to extract and manipulate data used for configuring a Cisco ACI fabric. A sample spreadsheet is available in `files/aci/`. You may wish familiarize yourself with the contents of that spreadsheet prior to completing the following examples.
 
-> **Note**: The inventory file `./inventory/yml` defines a group name of *python*, which has two localhosts, one for Python 2.7.17 and Python 3.6.9. You do not need to run the sample playbooks using both versions, it is to verify the code functions using either version.
+> **Note**: The inventory file `./files/inventory/yml` defines a group name of *python*, which has two localhosts, one for Python 2.7.17 and Python 3.6.9. You do not need to run the sample playbooks using both versions, it is to verify the code functions using either version.
 
 ### Create CSV 
 The module  `library/xls_to_csv.py`  reads an Excel .xlsx file and writes .csv file(s).
