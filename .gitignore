@@ -1,2 +1,4 @@
 .idea/
 files/*/*.csv
+files/vagrant/.vagrant/
+files/vagrant/*console.log

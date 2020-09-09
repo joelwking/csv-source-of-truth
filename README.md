@@ -56,6 +56,10 @@ Python packages **pandas** and **xlrd** are required if using `library/xls_to_cs
 ```
 $ sudo pip install xlrd pandas
 ```
+or if using Python3
+```
+$  sudo pip3 install xlrd pandas
+```
 
 ### How to Test the Software
 If you have Ansible Tower installed on an existing system you can download the modules to a shared directory and modify the Ansible configuration file to identify the location.
@@ -87,29 +91,37 @@ $ git clone https://github.com/joelwking/csv-source-of-truth.git
 $ export ANSIBLE_LIBRARY=$HOME/csv-source-of-truth/library
 $ export ANSIBLE_DEPRECATION_WARNINGS=False
 $ sudo pip install xlrd pandas
+$ sudo pip3 install xlrd pandas
 $ cd csv-source-of-truth
 ```
 ---
-**Note:** This README file was tested using the Ansible 2.8.1 release.
+**Note:** This README file was tested using the Ansible 2.9.13 release.
 
 ## Usage
 This section illustrates using the modules to extract and manipulate data used for configuring a Cisco ACI fabric. A sample spreadsheet is available in `files/aci/`. You may wish familiarize yourself with the contents of that spreadsheet prior to completing the following examples.
+
+> **Note**: The inventory file `./inventory/yml` defines a group name of *python*, which has two localhosts, one for Python 2.7.17 and Python 3.6.9. You do not need to run the sample playbooks using both versions, it is to verify the code functions using either version.
 
 ### Create CSV 
 The module  `library/xls_to_csv.py`  reads an Excel .xlsx file and writes .csv file(s).
 
 The sample  input file `files/aci/ACI_DHCP_configuration.xlsx`  contains two sheets, *"DHCP Relay"*, and *"data_centers"*. 
 
-The module is executed as an Ansible *ad-hoc* command to verify the sheet names. Run the module with an empty string for the *sheets* argument and the *warn* option to verify the sheet names. The module reports the names of the sheets located in the source file.
+The module is executed as an Ansible *ad-hoc* command to verify the sheet names. Run the module with an empty string for the *sheets* argument and the *warn* option to verify the sheet names. The module reports the names of the sheets located in the source file.  By using the host name of `python` and the `inventory.yml` file, both Python 2 and Python 3 are verified.
 
 ```bash
-
-vagrant@ubuntu-xenial:~/csv-source-of-truth$ ansible localhost -m xls_to_csv -a "src='$HOME/csv-source-of-truth/files/aci/ACI_DHCP_configuration.xlsx' dest=/tmp sheets='' warn=true"
- [WARNING]: sheet "DHCP Relay" found in source file, skipping
-
- [WARNING]: sheet "data_centers" found in source file, skipping
-
-localhost | SUCCESS => {
+vagrant@ubuntu-bionic:~/csv-source-of-truth$ ansible python -m xls_to_csv -a "src='$HOME/csv-source-of-truth/files/aci/ACI_DHCP_configuration.xlsx' dest=/tmp sheets='' warn=true" -i ./inventory.yml
+/usr/lib/python2.7/dist-packages/ansible/parsing/vault/__init__.py:44: CryptographyDeprecationWarning: Python 2 is no longer supported by the Python core team. Support for it is now deprecated in cryptography, and will be removed in a future release.
+  from cryptography.exceptions import InvalidSignature
+[WARNING]: sheet "DHCP Relay" found in source file, skipping
+[WARNING]: sheet "data_centers" found in source file, skipping
+python2 | SUCCESS => {
+    "ansible_facts": {
+        "sheet_filenames": []
+    },
+    "changed": false
+}
+python3 | SUCCESS => {
     "ansible_facts": {
         "sheet_filenames": []
     },
@@ -124,8 +136,10 @@ The module converts the sheet names and column headers to valid file and variabl
 Run the module as an ad-hoc command and specifying the sheet "DHCP Relay". Note the module removed the embedded space in the sheet named "DHCP Relay" and exported the contents to */tmp/DHCPRelay*.
 
 ```bash
-vagrant@ubuntu-xenial:~/csv-source-of-truth$ ansible localhost -m xls_to_csv -a "src='$HOME/csv-source-of-truth/files/aci/ACI_DHCP_configuration.xlsx' dest=/tmp sheets='DHCP Relay'"
-localhost | CHANGED => {
+vagrant@ubuntu-bionic:~/csv-source-of-truth$ ansible python -m xls_to_csv -a "src='$HOME/csv-source-of-truth/files/aci/ACI_DHCP_configuration.xlsx' dest=/tmp sheets='DHCP Relay'" -i ./inventory.yml
+/usr/lib/python2.7/dist-packages/ansible/parsing/vault/__init__.py:44: CryptographyDeprecationWarning: Python 2 is no longer supported by the Python core team. Support for it is now deprecated in cryptography, and will be removed in a future release.
+  from cryptography.exceptions import InvalidSignature
+python2 | CHANGED => {
     "ansible_facts": {
         "sheet_filenames": [
             "DHCPRelay"
@@ -133,6 +147,15 @@ localhost | CHANGED => {
     },
     "changed": true
 }
+python3 | CHANGED => {
+    "ansible_facts": {
+        "sheet_filenames": [
+            "DHCPRelay"
+        ]
+    },
+    "changed": true
+}
+
 ```
 Individual sheets in the spreadsheet file are extracted and written to file(s). The module returns a variable *sheet_filenames* which is a list filenames of the extracted sheets saved in the destination directory.
 
@@ -142,7 +165,7 @@ This section illustrates running the `xls_to_csv` module from a playbook.
 Review `test_xls.yml`. The `xls_to_csv` module is executed specifying the source spreadsheet file, a destination directory to write the selected sheets, and a list of sheets to extract from the spreadsheet file.
 
 ```yaml
-- hosts: localhost
+- hosts: python
   gather_facts: no 
   connection: local
   tags: [play1, xls_to_csv]
@@ -175,46 +198,52 @@ Running the module as an Ansible ad-hoc command, we can identify the names of th
 This step extracts the selected sheets and writes them to the destination directory.
 
 ```bash
-vagrant@ubuntu-xenial:~/csv-source-of-truth$ ansible-playbook ./test_xls.yml --tags play1
- [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match
-'all'
+vagrant@ubuntu-bionic:~/csv-source-of-truth$ ansible-playbook ./test_xls.yml --tags play1 -i ./inventory.yml
+/usr/lib/python2.7/dist-packages/ansible/parsing/vault/__init__.py:44: CryptographyDeprecationWarning: Python 2 is no longer supported by the Python core team. Support for it is now deprecated in cryptography, and will be removed in a future release.
+  from cryptography.exceptions import InvalidSignature
 
+PLAY [python] **********************************************************************************************************************
 
-PLAY [localhost] *******************************************************************************************************
+TASK [Extract the sheets from the Excel file, creating CSV files] ******************************************************************
+changed: [python2]
+changed: [python3]
 
-TASK [Extract the sheets from the Excel file, creating CSV files] ******************************************************
-changed: [localhost]
-
-TASK [debug] ***********************************************************************************************************
-ok: [localhost] => (item=data_centers) => {
+TASK [debug] ***********************************************************************************************************************
+ok: [python3] => (item=DHCPRelay) => {
+    "msg": "File /home/vagrant/csv-source-of-truth/files/aci/DHCPRelay.csv has been created"
+}
+ok: [python3] => (item=data_centers) => {
     "msg": "File /home/vagrant/csv-source-of-truth/files/aci/data_centers.csv has been created"
 }
-ok: [localhost] => (item=DHCPRelay) => {
+ok: [python2] => (item=data_centers) => {
+    "msg": "File /home/vagrant/csv-source-of-truth/files/aci/data_centers.csv has been created"
+}
+ok: [python2] => (item=DHCPRelay) => {
     "msg": "File /home/vagrant/csv-source-of-truth/files/aci/DHCPRelay.csv has been created"
 }
 
-PLAY [localhost] *******************************************************************************************************
+...
 
-PLAY [localhost] *******************************************************************************************************
-
-PLAY [localhost] *******************************************************************************************************
-
-PLAY RECAP *************************************************************************************************************
-localhost                  : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+PLAY RECAP *************************************************************************************************************************
+python2                    : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+python3                    : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
 ```
 
 Next review the contents of the output file(s).
 
 #### Determine the Column Header Names
 The column headers of the CSV file(s) can be identified by looking at the first record in each output file.
-```bash
-vagrant@ubuntu-xenial:~/csv-source-of-truth$ head -1 ./files/aci/*.csv
-==> ./files/aci/data_centers.csv <==
-city,address1,DC,state,postalcode,fullname,Tenant
 
+```bash
+vagrant@ubuntu-bionic:~/csv-source-of-truth$ head -1 ./files/aci/*.csv
 ==> ./files/aci/DHCPRelay.csv <==
-BD,AppProfile,VLAN,DC,L3Out,VRF,DHCP,EPG,Tenant
+DC,Tenant,VRF,BD,AppProfile,EPG,VLAN,DHCP,L3Out
+
+==> ./files/aci/data_centers.csv <==
+DC,Tenant,fullname,address1,city,state,postalcode
+vagrant@ubuntu-bionic:~/csv-source-of-truth$
 ```
+
 Because the column headers are used as variable names by playbooks, issue the `head -1` command for each file to identify the column headers.  
 
 ---
@@ -235,7 +264,7 @@ Looking at the sample data (file DHCPRelay.csv), there are 15 rows of data, repr
 While there are a number of columns in each row that describe the configuration of the ACI fabric(s), for this explanation we will focus on the column *DC* (data center), and *Tenant*.
 
 ```bash
-vagrant@ubuntu-xenial:~/csv-source-of-truth$ cat ./files/aci/DHCPRelay.csv | cut -d ',' -f 4,9
+vagrant@ubuntu-bionic:~/csv-source-of-truth$ cat ./files/aci/DHCPRelay.csv | cut -d ',' -f 1,2
 DC,Tenant
 DC1,XXV-INT
 DC1,XXV-DMZ
@@ -260,7 +289,7 @@ The module `csv_to_facts` reads a CSV file and returns as Ansible facts a list o
 The default behavior of `csv_to_facts` is to return  the content of the source (*src*) file in a list variable named *spreadsheet*. Examine this playbook sample.
 
 ```yaml
-- hosts: localhost
+- hosts: python
   gather_facts: no
   tags: [play2, csv_to_facts]
 
@@ -279,21 +308,23 @@ By executing the playbook, we iterate over the list variable *spreadsheet* and r
 Execute play2 to verify the debug module can reference the variables specified in the CSV file.
 
 ```bash
-vagrant@ubuntu-xenial:~/csv-source-of-truth$ ansible-playbook ./test_xls.yml --tags play2
- [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match
-'all'
+vagrant@ubuntu-bionic:~/csv-source-of-truth$ ansible-playbook ./test_xls.yml --tags play2 -i inventory.yml
+/usr/lib/python2.7/dist-packages/ansible/parsing/vault/__init__.py:44: CryptographyDeprecationWarning: Python 2 is no longer supported by the Python core team. Support for it is now deprecated in cryptography, and will be removed in a future release.
+  from cryptography.exceptions import InvalidSignature
 
-PLAY [localhost] *******************************************************************************************************
+PLAY [python] **********************************************************************************************************************
 
-PLAY [localhost] *******************************************************************************************************
+PLAY [python] **********************************************************************************************************************
 
-TASK [Default behavior of csv_to_facts] ********************************************************************************
-ok: [localhost]
+TASK [Default behavior of csv_to_facts] ********************************************************************************************
+ok: [python2]
+ok: [python3]
 
-TASK [debug] ***********************************************************************************************************
-ok: [localhost] => (item={u'BD': u'BD-BOX-RAZOR', u'AppProfile': u'AP-PRD', u'VLAN': u'39', u'DC': u'DC1', u'L3Out': u'ERN-N7KCORESW-L3OUT', u'VRF': u'VRF-XXV-INT', u'EPG': u'EPG-BOX-RAZOR', u'DHCP': u'Yes', u'Tenant': u'XXV-INT'}) => {
+TASK [debug] ***********************************************************************************************************************
+ok: [python3] => (item={u'BD': u'BD-BOX-RAZOR', u'AppProfile': u'AP-PRD', u'VLAN': u'39', u'DC': u'DC1', u'L3Out': u'ERN-N7KCORESW-L3OUT', u'VRF': u'VRF-XXV-INT', u'DHCP': u'Yes', u'EPG': u'EPG-BOX-RAZOR', u'Tenant': u'XXV-INT'}) => {
     "msg": "DC1 XXV-INT"
 }
+
 ```
 ---
 **Note:** The output of the above execution was truncated for brevity, only the first row was shown. 
@@ -392,26 +423,19 @@ By using the *vsheets* argument, specify a list of virtual spreadsheets you wish
 Executing the play with verbose mode (*-v*) illustrates the variable TENANTs is a list of unique values of columns DC and Tenant.
 
 ```bash
-
-vagrant@ubuntu-xenial:~/csv-source-of-truth$ ansible-playbook ./test_xls.yml --tags play3 -v
+vagrant@ubuntu-bionic:~/csv-source-of-truth$ ansible-playbook ./test_xls.yml --tags play3 -i inventory.yml -v
+/usr/lib/python2.7/dist-packages/ansible/parsing/vault/__init__.py:44: CryptographyDeprecationWarning: Python 2 is no longer supported by the Python core team. Support for it is now deprecated in cryptography, and will be removed in a future release.
+  from cryptography.exceptions import InvalidSignature
 Using /etc/ansible/ansible.cfg as config file
- [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match
-'all'
 
-PLAY [localhost] *******************************************************************************************************
+PLAY [python] *****************************************************************************************************************
 
-PLAY [localhost] *******************************************************************************************************
+PLAY [python] *****************************************************************************************************************
 
-PLAY [localhost] *******************************************************************************************************
+PLAY [python] *****************************************************************************************************************
 
-TASK [Create virtual spreadsheet of data centers (DC) and tenants] *****************************************************
-ok: [localhost] => {"ansible_facts": {"TENANTs": [{"DC": "DC2", "Tenant": "XXV-INT"}, {"DC": "DC1", "Tenant": "XXV-DMZ"}, {"DC": "DC2", "Tenant": "XXV-DMZ"}, {"DC": "DC1", "Tenant": "XXV-INT"}],  "changed": false}
-
-PLAY [localhost] *******************************************************************************************************
-
-PLAY RECAP *************************************************************************************************************
-localhost                  : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-
+TASK [Create virtual spreadsheet of data centers (DC) and tenants] *************************************************************
+ok: [python2] => {"ansible_facts": {"TENANTs": [{"DC": "DC2", "Tenant": "XXV-INT"}, {"DC": "DC1", "Tenant": "XXV-DMZ"}, {"DC": "DC2", "Tenant": "XXV-DMZ"}, {"DC": "DC1", "Tenant": "XXV-INT"}], "spreadsheet": [{"AppProfile": "AP-PRD", "BD": "BD-BOX-RAZOR", "DC": "DC1", "DHCP": "Yes", "EPG": "EPG-BOX-RAZOR", "L3Out": "ERN-N7KCORESW-L3OUT", "Tenant": "XXV-INT", "VLAN": "39", "VRF": "VRF-XXV-INT"}
 ```
 ---
 **Note:** The output of the above execution was truncated for brevity.
@@ -422,42 +446,51 @@ The module `xls_to_csv` returns the variable `sheet_filenames`.  This variable c
 By executing plays 1 and 4, the variable `sheet_filenames` can be referenced in subsequent play(s). Execute these plays by specifying their tags. 
 
 ```bash
-vagrant@ubuntu-xenial:~/csv-source-of-truth$  ansible-playbook ./test_xls.yml --tags 'play1, play4'
- [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match
-'all'
+vagrant@ubuntu-bionic:~/csv-source-of-truth$  ansible-playbook ./test_xls.yml --tags 'play1, play4' -i inventory.yml
+/usr/lib/python2.7/dist-packages/ansible/parsing/vault/__init__.py:44: CryptographyDeprecationWarning: Python 2 is no longer supported by the Python core team. Support for it is now deprecated in cryptography, and will be removed in a future release.
+  from cryptography.exceptions import InvalidSignature
 
+PLAY [python] **********************************************************************************************************************
 
-PLAY [localhost] ********************************************************************************************************
+TASK [Extract the sheets from the Excel file, creating CSV files] ******************************************************************
+changed: [python2]
+changed: [python3]
 
-TASK [Extract the sheets from the Excel file, creating CSV files] *******************************************************
-changed: [localhost]
-
-TASK [debug] ************************************************************************************************************
-ok: [localhost] => (item=data_centers) => {
+TASK [debug] ***********************************************************************************************************************
+ok: [python3] => (item=DHCPRelay) => {
+    "msg": "File /home/vagrant/csv-source-of-truth/files/aci/DHCPRelay.csv has been created"
+}
+ok: [python3] => (item=data_centers) => {
     "msg": "File /home/vagrant/csv-source-of-truth/files/aci/data_centers.csv has been created"
 }
-ok: [localhost] => (item=DHCPRelay) => {
+ok: [python2] => (item=data_centers) => {
+    "msg": "File /home/vagrant/csv-source-of-truth/files/aci/data_centers.csv has been created"
+}
+ok: [python2] => (item=DHCPRelay) => {
     "msg": "File /home/vagrant/csv-source-of-truth/files/aci/DHCPRelay.csv has been created"
 }
 
-PLAY [localhost] ********************************************************************************************************
+PLAY [python] **********************************************************************************************************************
 
-PLAY [localhost] ********************************************************************************************************
+PLAY [python] **********************************************************************************************************************
 
-PLAY [localhost] ********************************************************************************************************
+PLAY [python] **********************************************************************************************************************
 
-TASK [Create summarized virtual sheets, loading the variables in a namespace using the filename] ************************
-ok: [localhost] => (item=data_centers)
-ok: [localhost] => (item=DHCPRelay)
+TASK [Create summarized virtual sheets, loading the variables in a namespace using the filename] ***********************************
+ok: [python2] => (item=data_centers)
+ok: [python3] => (item=DHCPRelay)
+ok: [python2] => (item=DHCPRelay)
+ok: [python3] => (item=data_centers)
 
-TASK [debug] ************************************************************************************************************
-ok: [localhost] => (item={u'address1': u'1745 T Street Southeast', u'DC': u'DC1', u'Tenant': u'XXV-INT'}) => {
+TASK [debug] ***********************************************************************************************************************
+ok: [python3] => (item={u'address1': u'6007 Applegate Lane', u'DC': u'DC2', u'Tenant': u'XXV-DMZ'}) => {
     "msg": {
-        "DC": "DC1",
-        "Tenant": "XXV-INT",
-        "address1": "1745 T Street Southeast"
+        "DC": "DC2",
+        "Tenant": "XXV-DMZ",
+        "address1": "6007 Applegate Lane"
     }
 }
+
 ```
 ---
 **Note:** The output of the above execution was truncated for brevity.
@@ -488,29 +521,30 @@ Extra vars are passed from the command line to select the appropriate data cente
 In this example, the *debug* module is used as a placeholder for the appropriate Ansible ACI module(s). For more information on using Ansible to configure an ACI fabric, please refer to the [Cisco ACI Guide](https://docs.ansible.com/ansible/latest/scenario_guides/guide_aci.html).
 
 ```bash
-vagrant@ubuntu-xenial:~/csv-source-of-truth$ ansible-playbook -i ./files/inventory.yml ./manage_aci_dhcp.yml -e "data_ce
-nter=DC1 ticket=CHG58234"
+vagrant@ubuntu-bionic:~/csv-source-of-truth$ ansible-playbook -i ./files/inventory.yml ./manage_aci_dhcp.yml -e "data_ce
+> nter=DC1 ticket=CHG58234"
+/usr/lib/python2.7/dist-packages/ansible/parsing/vault/__init__.py:44: CryptographyDeprecationWarning: Python 2 is no longer supported by the Python core team. Support for it is now deprecated in cryptography, and will be removed in a future release.
+  from cryptography.exceptions import InvalidSignature
 
-PLAY [localhost] ********************************************************************************************************
+PLAY [localhost] ***************************************************************************************************************
 
-TASK [Extract the sheets from the Excel file, creating CSV file(s)] *****************************************************
- [WARNING]: sheet "data_centers" found in source file, skipping
-
+TASK [Extract the sheets from the Excel file, creating CSV file(s)] ************************************************************
+[WARNING]: sheet "data_centers" found in source file, skipping
 changed: [localhost]
 
-PLAY [APIC] *************************************************************************************************************
+PLAY [APIC] ********************************************************************************************************************
 
-TASK [Summarize the sheet and include as facts] *************************************************************************
+TASK [Summarize the sheet and include as facts] ********************************************************************************
 ok: [aci-demo.sandbox.wwtatc.local]
 
-TASK [Associate multiple DHCP servers with a Tenant, Bridge Domain] *****************************************************
-ok: [aci-demo.sandbox.wwtatc.local] => (item=[{u'BD': u'BD-BOX-RAZOR', u'AppProfile': u'AP-PRD', u'EPG': u'EPG-BOX-RAZOR', u'DHCP': u'Yes', u'DC': u'DC1', u'Tenant': u'XXV-INT'}, {'value': {u'dn': u'uni/tn-WWT_NULL/ap-MANAGEMENT/epg-DHCP', u'addr': u'198.51.100.17'}, 'key': u'DHCP-DC2-PRD'}]) => {
-    "msg": "Apply to tenant=XXV-INT BD=BD-BOX-RAZOR DHCP Label=DHCP-DC2-PRD server=198.51.100.17 dn=uni/tn-WWT_NULL/ap-MANAGEMENT/epg-DHCP"
+TASK [Associate multiple DHCP servers with a Tenant, Bridge Domain] ************************************************************
+ok: [aci-demo.sandbox.wwtatc.local] => (item=[{u'BD': u'BD-BOX-PRVLIN1', u'AppProfile': u'AP-BOX', u'DHCP': u'Yes', u'EPG': u'EPG-BOX-PRVLIN1', u'DC': u'DC1', u'Tenant': u'XXV-INT'}, {u'value': {u'dn': u'uni/tn-WWT_NULL/ap-MANAGEMENT/epg-DHCP', u'addr': u'198.51.100.17'}, u'key': u'DHCP-DC2-PRD'}]) => {
+    "msg": "Apply to tenant=XXV-INT BD=BD-BOX-PRVLIN1 DHCP Label=DHCP-DC2-PRD server=198.51.100.17 dn=uni/tn-WWT_NULL/ap-MANAGEMENT/epg-DHCP"
 }
-ok: [aci-demo.sandbox.wwtatc.local] => (item=[{u'BD': u'BD-BOX-RAZOR', u'AppProfile': u'AP-PRD', u'EPG': u'EPG-BOX-RAZOR', u'DHCP': u'Yes', u'DC': u'DC1', u'Tenant': u'XXV-INT'}, {'value': {u'dn': u'uni/tn-common/out-L3-ATC/instP-L3-ATC', u'addr': u'203.0.113.17'}, 'key': u'DHCP-DC1-PRD'}]) => {
-    "msg": "Apply to tenant=XXV-INT BD=BD-BOX-RAZOR DHCP Label=DHCP-DC1-PRD server=203.0.113.17 dn=uni/tn-common/out-L3-ATC/instP-L3-ATC"
+ok: [aci-demo.sandbox.wwtatc.local] => (item=[{u'BD': u'BD-BOX-PRVLIN1', u'AppProfile': u'AP-BOX', u'DHCP': u'Yes', u'EPG': u'EPG-BOX-PRVLIN1', u'DC': u'DC1', u'Tenant': u'XXV-INT'}, {u'value': {u'dn': u'uni/tn-common/out-L3-ATC/instP-L3-ATC', u'addr': u'203.0.113.17'}, u'key': u'DHCP-DC1-PRD'}]) => {
+    "msg": "Apply to tenant=XXV-INT BD=BD-BOX-PRVLIN1 DHCP Label=DHCP-DC1-PRD server=203.0.113.17 dn=uni/tn-common/out-L3-ATC/instP-L3-ATC"
 }
-skipping: [aci-demo.sandbox.wwtatc.local] => (item=[{u'BD': u'BD-BOX-PRVWIN2', u'AppProfile': u'AP-BOX', u'EPG': u'EPG-BOX-PRVWIN2', u'DHCP': u'Yes', u'DC': u'DC2', u'Tenant': u'XXV-INT'}, {'value': {u'dn': u'uni/tn-WWT_NULL/ap-MANAGEMENT/epg-DHCP', u'addr': u'198.51.100.17'}, 'key': u'DHCP-DC2-PRD'}])
+skipping: [aci-demo.sandbox.wwtatc.local] => (item=[{u'BD': u'BD-BOX-VMNFS2', u'AppProfile': u'AP-BOX', u'DHCP': u'Yes', u'EPG': u'EPG-BOX-VMNFS2', u'DC': u'DC2', u'Tenant': u'XXV-INT'}, {u'value': {u'dn': u'uni/tn-WWT_NULL/ap-MANAGEMENT/epg-DHCP', u'addr': u'198.51.100.17'}, u'key': u'DHCP-DC2-PRD'}])
 
 ```
 ---

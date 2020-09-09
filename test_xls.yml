@@ -11,7 +11,7 @@
 #  ------
 #  Play 1
 #  ------
-- hosts: localhost
+- hosts: python
   gather_facts: no
   connection: local
   tags: [play1, xls_to_csv]
@@ -42,7 +42,7 @@
 # ------
 # Play 2
 # ------
-- hosts: localhost
+- hosts: python
   gather_facts: no
   tags: [play2, csv_to_facts]
 
@@ -57,7 +57,7 @@
 # ------
 # Play 3
 # ------
-- hosts: localhost
+- hosts: python
   gather_facts: no
   tags: [play3, csv_to_facts]
 
@@ -73,7 +73,7 @@
 # ------
 # Play 4
 # ------
-- hosts: localhost
+- hosts: python
   gather_facts: no
   tags: [play4, csv_to_facts]
 

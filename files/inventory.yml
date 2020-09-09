@@ -2,4 +2,5 @@ all:
   children:
     APIC:
       hosts:
-        aci-demo.sandbox.wwtatc.local: {}
+        aci-demo.sandbox.wwtatc.local:
+          ansible_python_interpreter: /usr/bin/python3
