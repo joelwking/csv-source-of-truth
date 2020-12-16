@@ -39,6 +39,10 @@ This repository contains the following modules in the `/library/` directory:
 - `xls_to_csv.py`    Reads an Excel .xlsx file and output .csv files for each sheet specified
 - `csv_to_facts.py`  Reads a CSV file and returns as ansible facts a list of dictionaries for each row
 
+Also, a filter plugin in `/plugins/filter` directory:
+
+- `to_csv.py`        Called with a list of dictionaries and outputs a string (with newlines) which can be written to a CSV file        
+
 The two modules can be executed in sequence. For example, `xls_to_csv.py` can be used to extract sheets from a spreadsheet into individual CSV files, and in a subsequent task or play, `csv_to_facts.py` can be used to expose the data from a CSV file as variables to a playbook. Either module can be used independently of the other. 
 
 The module `csv_to_facts.py` was originally developed in 2015. It remains at the [original](https://github.com/joelwking/ansible-nxapi) (now deprecated) location. The design goal of these modules subscribes to the UNIX philosophy of 
@@ -82,6 +86,14 @@ $ sudo wget https://raw.githubusercontent.com/joelwking/csv-source-of-truth/mast
 $ chmod 755 *.py
 ```
 To verify installation, issue `ansible-doc csv_to_facts`.
+
+The filter plugin can be written to the Ansible 'magic' directories as well. Refer to the [documentation](https://docs.ansible.com/ansible/latest/dev_guide/developing_locally.html) on developing locally.
+
+Modify the `ansible.cfg` file to include the location where the filter plugin `to_csv.py` is downloaded. For example:
+
+```
+filter_plugins     = /usr/share/ansible/plugins/filter 
+```
 
 #### Install using Vagrant
 Alternately, if you only wish to create a test environment using [Vagrant](https://www.vagrantup.com/), there is a sample configuration file in `files/vagrant/`.  After issuing the `vagrant up` command using the Vagrantfile in this repository, `vagrant ssh` and complete the configuration with the following commands:
@@ -559,6 +571,43 @@ vagrant@ubuntu-xenial:~/csv-source-of-truth$ ansible-playbook -i ./files/invento
 ```
 #### Summary
 This section illustrates reading one or more CSV files into variables. Additionally, module `csv_to_facts` can be configured to return virtual sheets which return only distinct (different) values. This feature implements the behavior of the SQL command *DISTINCT*, eliminating redundant rows and optimizing playbook execution.
+
+### Generate CSV
+The filter plugin `to_csv.py` expects a list of dictionaries as input. Each list item is converted to a row (line) of the CSV file
+The dictionary keys are inserted before the first record, representing the column headers. Output is a string with newline characters. This string can be written to a file and opened with Excel or other program which recognizes CSV file formats.
+
+```
+#!/usr/bin/env ansible-playbook
+---
+- name: create CSV file
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    list_of_dict:
+      - {'name': 'Bob', 'title': 'programmer'}
+      - {'name': 'Sally', 'title': 'writer'}
+      - {'name': 'Russell', 'title': 'thought leader'}
+
+  tasks:
+    - name: Write the output to a file in CSV format
+      copy:
+        content: '{{ list_of_dict | to_csv }}'
+        dest: '/tmp/query_api.csv'
+        mode: 0644
+```
+
+The resulting output file `/tmp/query_api.csv` looks as follows:
+
+```csv
+name,title
+Bob,programmer
+Sally,writer
+Russell,thought leader
+```
+#### Summary
+Using the filter plugin `to_csv.py` aids in creating CSV files. Many network engineers are familiar with using the CSV format to define and visualize the network infrastructure.
 
 ## Synopsis
 Organizing and managing the Source of Truth for configuring infrastructure is equally important to developing the process (workflow) to effect the configuration. Network engineers commonly use spreadsheets to represent network infrastructure which organize data in a tabular data format similar to a relational database. 
